@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор стоимости для менеджеров продаж</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+        }
+        .input-panel {
+            padding: 30px;
+            background: #f8fafc;
+            border-right: 1px solid #e2e8f0;
+        }
+        .results-panel {
+            padding: 30px;
+            background: white;
+        }
+        .form-group {
+            margin-bottom: 24px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+            font-size: 14px;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            background: white;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #667eea;
+        }
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .alert-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .results-card {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 2px solid #0ea5e9;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .results-card h3 {
+            margin: 0 0 16px 0;
+            color: #0c4a6e;
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .cost-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #bae6fd;
+        }
+        .cost-item:last-child {
+            border-bottom: none;
+            font-weight: 700;
+            font-size: 16px;
+            color: #0c4a6e;
+            margin-top: 8px;
+            padding-top: 16px;
+            border-top: 2px solid #0ea5e9;
+        }
+        .cost-label {
+            color: #164e63;
+        }
+        .cost-value {
+            font-weight: 600;
+            color: #0c4a6e;
+        }
+        .comparison-card {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 2px solid #22c55e;
+            border-radius: 12px;
+            padding: 24px;
+        }
+        .comparison-card h3 {
+            margin: 0 0 16px 0;
+            color: #14532d;
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .comparison-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #bbf7d0;
+        }
+        .comparison-row:last-child {
+            border-bottom: none;
+        }
+        .model-name {
+            font-weight: 600;
+            color: #166534;
+        }
+        .model-cost {
+            font-weight: 700;
+            font-size: 16px;
+            color: #14532d;
+        }
+        .savings {
+            background: #dcfce7;
+            color: #166534;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 16px;
+        }
+        .disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .input-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 16px;
+            align-items: end;
+        }
+        .currency-display {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧮 Калькулятор стоимости для менеджеров продаж</h1>
+            <p>Быстрый расчет итоговой стоимости под конкретного клиента</p>
+        </div>
+        
+        <div class="content">
+            <div class="input-panel">
+                <h2 style="margin-top: 0; color: #374151;">Параметры клиента</h2>
+                
+                <div class="form-group">
+                    <label for="country">1. Страна компании</label>
+                    <select id="country" class="form-control">
+                        <option value="">Выберите страну...</option>
+                        <option value="US">🇺🇸 США (US)</option>
+                        <option value="GE">🇬🇪 Грузия (GE)</option>
+                        <option value="CY">🇨🇾 Кипр (CY)</option>
+                        <option value="AE">🇦🇪 ОАЭ (AE)</option>
+                        <option value="PL">🇵🇱 Польша (PL)</option>
+                        <option value="ES">🇪🇸 Испания (ES)</option>
+                        <option value="AR">🇦🇷 Аргентина (AR) - только комиссия</option>
+                        <option value="KZ">🇰🇿 Казахстан (KZ) - только комиссия</option>
+                        <option value="UZ">🇺🇿 Узбекистан (UZ) - только комиссия</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>2. Исполнители из РФ/БР/Украины</label>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="restrictedPerformers">
+                        <label for="restrictedPerformers">Есть исполнители из РФ/БР/Украины</label>
+                    </div>
+                    <div id="restrictedWarning" class="alert alert-warning" style="display: none;">
+                        ⚠️ Подписка для исполнителей из РФ/БР/Украины недоступна
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="taskCurrency">3. Валюта задачи</label>
+                    <select id="taskCurrency" class="form-control">
+                        <option value="">Выберите валюту...</option>
+                        <option value="USD">💵 USD (подписка + комиссия)</option>
+                        <option value="EUR">💶 EUR (подписка + комиссия)</option>
+                        <option value="USDT">₮ USDT (только комиссия)</option>
+                        <option value="USDC">🪙 USDC (только комиссия)</option>
+                        <option value="RUB">₽ RUB (только комиссия)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="depositCurrency">4. Валюта пополнения</label>
+                    <select id="depositCurrency" class="form-control">
+                        <option value="">Выберите валюту...</option>
+                        <option value="USD">💵 USD</option>
+                        <option value="EUR">💶 EUR</option>
+                        <option value="USDT">₮ USDT</option>
+                        <option value="USDC">🪙 USDC</option>
+                        <option value="RUB">₽ RUB</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="exchangeGroup" style="display: none;">
+                    <label for="exchangeFee">Комиссия за обмен валют</label>
+                    <select id="exchangeFee" class="form-control">
+                        <option value="">Выберите комиссию...</option>
+                    </select>
+                    <div class="currency-display" id="exchangeInfo"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="taskCommission">5. Комиссия за задачу (%)</label>
+                    <select id="taskCommission" class="form-control">
+                        <option value="">Выберите комиссию...</option>
+                        <option value="2">2.0%</option>
+                        <option value="2.2">2.2%</option>
+                        <option value="2.5">2.5%</option>
+                        <option value="3">3.0%</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="subscriptionGroup">
+                    <label for="subscriptionSize">6. Размер подписки</label>
+                    <select id="subscriptionSize" class="form-control">
+                        <option value="">Выберите размер...</option>
+                        <option value="20">20 в валюте задачи</option>
+                        <option value="25">25 в валюте задачи</option>
+                        <option value="32">32 в валюте задачи</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="withdrawalFee">7. Комиссия за вывод исполнителем (%)</label>
+                    <select id="withdrawalFee" class="form-control">
+                        <option value="">Выберите комиссию...</option>
+                        <option value="2.5">2.5%</option>
+                        <option value="2.8">2.8%</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="companyPaysWithdrawal">
+                        <label for="companyPaysWithdrawal">Компания берет комиссию за вывод на себя</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Данные для расчета</label>
+                    <div class="grid-2">
+                        <div>
+                            <input type="number" id="performers" class="form-control" placeholder="Количество исполнителей" min="1">
+                        </div>
+                        <div>
+                            <input type="number" id="avgPayout" class="form-control" placeholder="Средняя выплата" min="0" step="100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-panel">
+                <h2 style="margin-top: 0; color: #374151;">Результаты расчета</h2>
+                
+                <div id="results" style="display: none;">
+                    <div id="subscriptionResults" class="results-card">
+                        <h3>📋 Подписочная модель</h3>
+                        <div id="subscriptionCosts"></div>
+                    </div>
+
+                    <div id="commissionResults" class="results-card">
+                        <h3>💳 Комиссионная модель</h3>
+                        <div id="commissionCosts"></div>
+                    </div>
+
+                    <div id="comparison" class="comparison-card">
+                        <h3>⚖️ Сравнение моделей</h3>
+                        <div id="comparisonContent"></div>
+                    </div>
+                </div>
+
+                <div id="placeholder" class="alert alert-info">
+                    👈 Заполните параметры слева для расчета стоимости
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Конфигурация
+        const config = {
+            subscriptionCountries: ['US', 'GE', 'CY', 'AE', 'PL', 'ES'],
+            commissionOnlyCountries: ['AR', 'KZ', 'UZ'],
+            subscriptionCurrencies: ['USD', 'EUR'],
+            commissionOnlyCurrencies: ['USDT', 'USDC', 'RUB'],
+            exchangeRates: {
+                'USDT-USD': [0.8, 1.0],
+                'USDC-USD': [0.8, 1.0],
+                'USD-RUB': [5.0, 2.0],
+                'USD-EUR': [0],
+                'EUR-USD': [0],
+                'USDT-EUR': [0],
+                'USDC-EUR': [0]
+            }
+        };
+
+        // Элементы DOM
+        const elements = {
+            country: document.getElementById('country'),
+            restrictedPerformers: document.getElementById('restrictedPerformers'),
+            restrictedWarning: document.getElementById('restrictedWarning'),
+            taskCurrency: document.getElementById('taskCurrency'),
+            depositCurrency: document.getElementById('depositCurrency'),
+            exchangeGroup: document.getElementById('exchangeGroup'),
+            exchangeFee: document.getElementById('exchangeFee'),
+            exchangeInfo: document.getElementById('exchangeInfo'),
+            taskCommission: document.getElementById('taskCommission'),
+            subscriptionGroup: document.getElementById('subscriptionGroup'),
+            subscriptionSize: document.getElementById('subscriptionSize'),
+            withdrawalFee: document.getElementById('withdrawalFee'),
+            companyPaysWithdrawal: document.getElementById('companyPaysWithdrawal'),
+            performers: document.getElementById('performers'),
+            avgPayout: document.getElementById('avgPayout'),
+            results: document.getElementById('results'),
+            placeholder: document.getElementById('placeholder')
+        };
+
+        // Обработчики событий
+        elements.restrictedPerformers.addEventListener('change', updateRestrictedWarning);
+        elements.taskCurrency.addEventListener('change', updateCurrencyOptions);
+        elements.depositCurrency.addEventListener('change', updateExchangeOptions);
+        elements.country.addEventListener('change', updateAvailableOptions);
+
+        // Обновляем расчеты при изменении любого поля
+        Object.values(elements).forEach(element => {
+            if (element.addEventListener) {
+                element.addEventListener('change', calculateResults);
+                element.addEventListener('input', calculateResults);
+            }
+        });
+
+        function updateRestrictedWarning() {
+            elements.restrictedWarning.style.display = elements.restrictedPerformers.checked ? 'block' : 'none';
+        }
+
+        function updateAvailableOptions() {
+            const country = elements.country.value;
+            const isSubscriptionAvailable = config.subscriptionCountries.includes(country);
+            
+            elements.subscriptionGroup.style.display = isSubscriptionAvailable ? 'block' : 'none';
+            
+            if (!isSubscriptionAvailable) {
+                elements.subscriptionSize.value = '';
+            }
+        }
+
+        function updateCurrencyOptions() {
+            const taskCurrency = elements.taskCurrency.value;
+            const isSubscriptionCurrency = config.subscriptionCurrencies.includes(taskCurrency);
+            
+            // Обновляем видимость группы подписки
+            if (!isSubscriptionCurrency) {
+                elements.subscriptionGroup.style.display = 'none';
+                elements.subscriptionSize.value = '';
+            } else {
+                const country = elements.country.value;
+                const isSubscriptionCountry = config.subscriptionCountries.includes(country);
+                elements.subscriptionGroup.style.display = isSubscriptionCountry ? 'block' : 'none';
+            }
+        }
+
+        function updateExchangeOptions() {
+            const taskCurrency = elements.taskCurrency.value;
+            const depositCurrency = elements.depositCurrency.value;
+            
+            if (!taskCurrency || !depositCurrency || taskCurrency === depositCurrency) {
+                elements.exchangeGroup.style.display = 'none';
+                elements.exchangeFee.value = '';
+                return;
+            }
+
+            const pair = `${depositCurrency}-${taskCurrency}`;
+            const rates = config.exchangeRates[pair];
+            
+            if (rates) {
+                elements.exchangeGroup.style.display = 'block';
+                elements.exchangeFee.innerHTML = '<option value="">Выберите комиссию...</option>';
+                
+                if (rates[0] === 0) {
+                    elements.exchangeFee.innerHTML += '<option value="0">0% (курс 1:1)</option>';
+                    elements.exchangeInfo.textContent = 'Обмен по курсу 1:1';
+                } else {
+                    rates.forEach(rate => {
+                        elements.exchangeFee.innerHTML += `<option value="${rate}">${rate}%</option>`;
+                    });
+                    elements.exchangeInfo.textContent = `Пара ${depositCurrency}→${taskCurrency}`;
+                }
+            } else {
+                elements.exchangeGroup.style.display = 'none';
+                elements.exchangeFee.value = '';
+            }
+        }
+
+        function calculateResults() {
+            const performers = parseInt(elements.performers.value) || 0;
+            const avgPayout = parseFloat(elements.avgPayout.value) || 0;
+            const taskCommission = parseFloat(elements.taskCommission.value) || 0;
+            const withdrawalFee = parseFloat(elements.withdrawalFee.value) || 0;
+            const exchangeFee = parseFloat(elements.exchangeFee.value) || 0;
+            const subscriptionSize = parseFloat(elements.subscriptionSize.value) || 0;
+            const companyPaysWithdrawal = elements.companyPaysWithdrawal.checked;
+            
+            if (performers === 0 || avgPayout === 0 || taskCommission === 0) {
+                elements.results.style.display = 'none';
+                elements.placeholder.style.display = 'block';
+                return;
+            }
+
+            elements.results.style.display = 'block';
+            elements.placeholder.style.display = 'none';
+
+            // Расчет комиссионной модели
+            const monthlyPayout = performers * avgPayout;
+            const taskCommissionCost = monthlyPayout * (taskCommission / 100);
+            const exchangeCost = monthlyPayout * (exchangeFee / 100);
+            const withdrawalCost = companyPaysWithdrawal ? monthlyPayout * (withdrawalFee / 100) : 0;
+            
+            const commissionTotal = taskCommissionCost + exchangeCost + withdrawalCost;
+
+            // Расчет подписочной модели (если доступна)
+            let subscriptionTotal = 0;
+            let isSubscriptionAvailable = false;
+            
+            const country = elements.country.value;
+            const taskCurrency = elements.taskCurrency.value;
+            const hasRestricted = elements.restrictedPerformers.checked;
+            
+            if (config.subscriptionCountries.includes(country) && 
+                config.subscriptionCurrencies.includes(taskCurrency) && 
+                !hasRestricted && 
+                subscriptionSize > 0) {
+                
+                isSubscriptionAvailable = true;
+                const subscriptionCost = performers * subscriptionSize;
+                subscriptionTotal = subscriptionCost + exchangeCost + withdrawalCost;
+            }
+
+            // Отображение результатов
+            displayResults(isSubscriptionAvailable, subscriptionTotal, commissionTotal, {
+                performers,
+                avgPayout,
+                monthlyPayout,
+                taskCommissionCost,
+                exchangeCost,
+                withdrawalCost,
+                subscriptionSize,
+                taskCurrency: elements.taskCurrency.value,
+                companyPaysWithdrawal
+            });
+        }
+
+        function displayResults(isSubscriptionAvailable, subscriptionTotal, commissionTotal, details) {
+            // Подписочная модель
+            if (isSubscriptionAvailable) {
+                elements.subscriptionResults.style.display = 'block';
+                elements.subscriptionResults.querySelector('#subscriptionCosts').innerHTML = `
+                    <div class="cost-item">
+                        <span class="cost-label">Подписка (${details.performers} × ${details.subscriptionSize})</span>
+                        <span class="cost-value">${(details.performers * details.subscriptionSize).toFixed(2)} ${details.taskCurrency}</span>
+                    </div>
+                    ${details.exchangeCost > 0 ? `
+                    <div class="cost-item">
+                        <span class="cost-label">Обмен валют</span>
+                        <span class="cost-value">${details.exchangeCost.toFixed(2)} ${details.taskCurrency}</span>
+                    </div>` : ''}
+                    ${details.companyPaysWithdrawal ? `
+                    <div class="cost-item">
+                        <span class="cost-label">Комиссия за вывод</span>
+                        <span class="cost-value">${details.withdrawalCost.toFixed(2)} ${details.taskCurrency}</span>
+                    </div>` : ''}
+                    <div class="cost-item">
+                        <span class="cost-label">ИТОГО</span>
+                        <span class="cost-value">${subscriptionTotal.toFixed(2)} ${details.taskCurrency}</span>
+                    </div>
+                `;
+            } else {
+                elements.subscriptionResults.style.display = 'none';
+            }
+
+            // Комиссионная модель
+            elements.commissionResults.querySelector('#commissionCosts').innerHTML = `
+                <div class="cost-item">
+                    <span class="cost-label">Месячные выплаты</span>
+                    <span class="cost-value">${details.monthlyPayout.toFixed(2)} ${details.taskCurrency}</span>
+                </div>
+                <div class="cost-item">
+                    <span class="cost-label">Комиссия за задачи</span>
+                    <span class="cost-value">${details.taskCommissionCost.toFixed(2)} ${details.taskCurrency}</span>
+                </div>
+                ${details.exchangeCost > 0 ? `
+                <div class="cost-item">
+                    <span class="cost-label">Обмен валют</span>
+                    <span class="cost-value">${details.exchangeCost.toFixed(2)} ${details.taskCurrency}</span>
+                </div>` : ''}
+                ${details.companyPaysWithdrawal ? `
+                <div class="cost-item">
+                    <span class="cost-label">Комиссия за вывод</span>
+                    <span class="cost-value">${details.withdrawalCost.toFixed(2)} ${details.taskCurrency}</span>
+                </div>` : ''}
+                <div class="cost-item">
+                    <span class="cost-label">ИТОГО</span>
+                    <span class="cost-value">${commissionTotal.toFixed(2)} ${details.taskCurrency}</span>
+                </div>
+            `;
+
+            // Сравнение
+            if (isSubscriptionAvailable) {
+                const savings = commissionTotal - subscriptionTotal;
+                const savingsPercent = ((savings / commissionTotal) * 100).toFixed(1);
+                
+                document.getElementById('comparison').innerHTML = `
+                    <h3>⚖️ Сравнение моделей</h3>
+                    <div class="comparison-row">
+                        <span class="model-name">Подписочная модель</span>
+                        <span class="model-cost">${subscriptionTotal.toFixed(2)} ${details.taskCurrency}</span>
+                    </div>
+                    <div class="comparison-row">
+                        <span class="model-name">Комиссионная модель</span>
+                        <span class="model-cost">${commissionTotal.toFixed(2)} ${details.taskCurrency}</span>
+                    </div>
+                    <div class="savings">
+                        ${savings > 0 ? 
+                            `💰 Экономия с подпиской: ${savings.toFixed(2)} ${details.taskCurrency} (${savingsPercent}%)` :
+                            `📈 Комиссия выгоднее на: ${Math.abs(savings).toFixed(2)} ${details.taskCurrency} (${Math.abs(savingsPercent)}%)`
+                        }
+                    </div>
+                `;
+            } else {
+                document.getElementById('comparison').innerHTML = `
+                    <h3>ℹ️ Доступна только комиссионная модель</h3>
+                    <p style="color: #6b7280; text-align: center; margin: 16px 0;">
+                        Подписка недоступна для выбранных параметров
+                    </p>
+                `;
+            }
+        }
+
+        // Инициализация
+        updateRestrictedWarning();
+        updateAvailableOptions();
+    </script>
+</body>
+</html>
