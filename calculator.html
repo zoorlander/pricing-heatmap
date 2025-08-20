@@ -122,6 +122,11 @@
             color: #1e40af;
             border: 1px solid #93c5fd;
         }
+        .alert-danger {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fca5a5;
+        }
         .grid-2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -244,6 +249,18 @@
             font-size: 18px;
             font-weight: 700;
         }
+        .subscription-disabled {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            border: 2px solid #9ca3af;
+            opacity: 0.7;
+        }
+        .subscription-disabled h3 {
+            color: #6b7280;
+        }
+        .subscription-disabled .cost-label,
+        .subscription-disabled .cost-value {
+            color: #9ca3af;
+        }
     </style>
 </head>
 <body>
@@ -294,6 +311,26 @@
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="hasRestrictedPerformers">
+                        <label for="hasRestrictedPerformers">У компании есть исполнители из РФ / РБ / Украины</label>
+                    </div>
+                    <div id="restrictedPerformersWarning" class="alert alert-danger" style="display: none;">
+                        ⚠️ Подписка недоступна для исполнителей из указанных стран
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="hasLegalEntityPerformers">
+                        <label for="hasLegalEntityPerformers">У компании есть исполнители ЮЛ</label>
+                    </div>
+                    <div id="legalEntityWarning" class="alert alert-danger" style="display: none;">
+                        ⚠️ Подписка недоступна для исполнителей ЮЛ
+                    </div>
+                </div>
+
                 <button class="btn-calculate" onclick="calculateRevenue()">
                     🧮 Рассчитать
                 </button>
@@ -327,6 +364,34 @@
     </div>
 
     <script>
+        // Обработчики для показа/скрытия предупреждений
+        document.getElementById('hasRestrictedPerformers').addEventListener('change', function() {
+            const warning = document.getElementById('restrictedPerformersWarning');
+            warning.style.display = this.checked ? 'block' : 'none';
+            
+            // Пересчитываем если результаты уже показаны
+            if (document.getElementById('results').style.display !== 'none') {
+                calculateRevenue();
+            }
+        });
+
+        document.getElementById('hasLegalEntityPerformers').addEventListener('change', function() {
+            const warning = document.getElementById('legalEntityWarning');
+            warning.style.display = this.checked ? 'block' : 'none';
+            
+            // Пересчитываем если результаты уже показаны
+            if (document.getElementById('results').style.display !== 'none') {
+                calculateRevenue();
+            }
+        });
+
+        function isSubscriptionAvailable() {
+            const hasRestrictedPerformers = document.getElementById('hasRestrictedPerformers').checked;
+            const hasLegalEntityPerformers = document.getElementById('hasLegalEntityPerformers').checked;
+            
+            return !hasRestrictedPerformers && !hasLegalEntityPerformers;
+        }
+
         function calculateRevenue() {
             // Получаем значения из формы
             const performers = parseInt(document.getElementById('performers').value) || 0;
@@ -344,6 +409,8 @@
                 return;
             }
 
+            const subscriptionAvailable = isSubscriptionAvailable();
+
             // Расчет комиссионной модели
             const totalPayout = performers * avgPayout; // 10 * 1000 = 10000
             
@@ -359,13 +426,19 @@
             // Общий доход от комиссии
             const commissionRevenue = taskCommissionIncome + exchangeIncome + withdrawalIncome;
 
-            // Расчет подписочной модели
-            const subscriptionIncome = subscription * performers;
-            const subscriptionRevenue = subscriptionIncome + exchangeIncome + withdrawalIncome;
+            // Расчет подписочной модели (только если доступна)
+            let subscriptionIncome = 0;
+            let subscriptionRevenue = 0;
+            let subscriptionRouteCost = 0;
+            
+            if (subscriptionAvailable && subscription > 0) {
+                subscriptionIncome = subscription * performers;
+                subscriptionRevenue = subscriptionIncome + exchangeIncome + withdrawalIncome;
+                subscriptionRouteCost = (subscriptionRevenue / totalPayout) * 100;
+            }
 
             // Стоимость маршрута в процентах
             const commissionRouteCost = (commissionRevenue / totalPayout) * 100;
-            const subscriptionRouteCost = (subscriptionRevenue / totalPayout) * 100;
 
             // Отображение результатов
             displayCalculationResults({
@@ -384,7 +457,8 @@
                 subscriptionIncome,
                 subscriptionRevenue,
                 commissionRouteCost,
-                subscriptionRouteCost
+                subscriptionRouteCost,
+                subscriptionAvailable
             });
         }
 
@@ -393,6 +467,37 @@
             document.getElementById('placeholder').style.display = 'none';
 
             // Доходы
+            let subscriptionSection = '';
+            if (data.subscriptionAvailable && data.subscription > 0) {
+                subscriptionSection = `
+                    <h4 style="color: #92400e; margin: 16px 0 12px 0;">Подписочная модель:</h4>
+                    <div class="cost-item">
+                        <span class="cost-label">Доход от подписки</span>
+                        <span class="cost-value">$${data.subscriptionIncome.toFixed(2)}</span>
+                    </div>
+                    <div class="cost-item">
+                        <span class="cost-label">Доход от обмена валют</span>
+                        <span class="cost-value">$${data.exchangeIncome.toFixed(2)}</span>
+                    </div>
+                    ${data.companyPaysWithdrawal ? `
+                    <div class="cost-item">
+                        <span class="cost-label">Доход от оплаты вывода</span>
+                        <span class="cost-value">$${data.withdrawalIncome.toFixed(2)}</span>
+                    </div>` : ''}
+                    <div class="cost-item">
+                        <span class="cost-label">ИТОГО доход от подписки</span>
+                        <span class="cost-value">$${data.subscriptionRevenue.toFixed(2)}</span>
+                    </div>
+                `;
+            } else if (!data.subscriptionAvailable) {
+                subscriptionSection = `
+                    <h4 style="color: #dc2626; margin: 16px 0 12px 0;">Подписочная модель:</h4>
+                    <div class="alert alert-danger">
+                        ❌ Подписка недоступна для данной конфигурации
+                    </div>
+                `;
+            }
+
             document.getElementById('revenueCosts').innerHTML = `
                 <h4 style="color: #92400e; margin: 0 0 12px 0;">Комиссионная модель:</h4>
                 <div class="cost-item">
@@ -412,29 +517,11 @@
                     <span class="cost-label">ИТОГО доход от комиссии</span>
                     <span class="cost-value">$${data.commissionRevenue.toFixed(2)}</span>
                 </div>
-                
-                <h4 style="color: #92400e; margin: 16px 0 12px 0;">Подписочная модель:</h4>
-                <div class="cost-item">
-                    <span class="cost-label">Доход от подписки</span>
-                    <span class="cost-value">$${data.subscriptionIncome.toFixed(2)}</span>
-                </div>
-                <div class="cost-item">
-                    <span class="cost-label">Доход от обмена валют</span>
-                    <span class="cost-value">$${data.exchangeIncome.toFixed(2)}</span>
-                </div>
-                ${data.companyPaysWithdrawal ? `
-                <div class="cost-item">
-                    <span class="cost-label">Доход от оплаты вывода</span>
-                    <span class="cost-value">$${data.withdrawalIncome.toFixed(2)}</span>
-                </div>` : ''}
-                <div class="cost-item">
-                    <span class="cost-label">ИТОГО доход от подписки</span>
-                    <span class="cost-value">$${data.subscriptionRevenue.toFixed(2)}</span>
-                </div>
+                ${subscriptionSection}
             `;
 
             // Стоимость маршрута
-            document.getElementById('routeCosts').innerHTML = `
+            let routeCostContent = `
                 <div class="cost-item">
                     <span class="cost-label">Общие выплаты исполнителям</span>
                     <span class="cost-value">$${data.totalPayout.toFixed(2)}</span>
@@ -443,32 +530,62 @@
                     <span class="cost-label">Комиссионная модель</span>
                     <span class="cost-value">${data.commissionRouteCost.toFixed(2)}%</span>
                 </div>
-                <div class="cost-item">
-                    <span class="cost-label">Подписочная модель</span>
-                    <span class="cost-value">${data.subscriptionRouteCost.toFixed(2)}%</span>
-                </div>
             `;
 
+            if (data.subscriptionAvailable && data.subscription > 0) {
+                routeCostContent += `
+                    <div class="cost-item">
+                        <span class="cost-label">Подписочная модель</span>
+                        <span class="cost-value">${data.subscriptionRouteCost.toFixed(2)}%</span>
+                    </div>
+                `;
+            } else {
+                routeCostContent += `
+                    <div class="cost-item">
+                        <span class="cost-label">Подписочная модель</span>
+                        <span class="cost-value" style="color: #dc2626;">Недоступна</span>
+                    </div>
+                `;
+            }
+
+            document.getElementById('routeCosts').innerHTML = routeCostContent;
+
             // Сравнение
-            const revenueDifference = data.commissionRevenue - data.subscriptionRevenue;
-            const routeCostDifference = data.commissionRouteCost - data.subscriptionRouteCost;
-            
-            document.getElementById('comparisonContent').innerHTML = `
-                <div class="comparison-row">
-                    <span class="model-name">Комиссионная модель</span>
-                    <span class="model-cost">$${data.commissionRevenue.toFixed(2)} (${data.commissionRouteCost.toFixed(2)}%)</span>
-                </div>
-                <div class="comparison-row">
-                    <span class="model-name">Подписочная модель</span>
-                    <span class="model-cost">$${data.subscriptionRevenue.toFixed(2)} (${data.subscriptionRouteCost.toFixed(2)}%)</span>
-                </div>
-                <div class="savings">
-                    ${revenueDifference > 0 ? 
-                        `💰 Комиссия выгоднее на: $${revenueDifference.toFixed(2)} (+${routeCostDifference.toFixed(2)}%)` :
-                        `📈 Подписка выгоднее на: $${Math.abs(revenueDifference).toFixed(2)} (${Math.abs(routeCostDifference).toFixed(2)}%)`
-                    }
-                </div>
-            `;
+            if (data.subscriptionAvailable && data.subscription > 0) {
+                const revenueDifference = data.commissionRevenue - data.subscriptionRevenue;
+                const routeCostDifference = data.commissionRouteCost - data.subscriptionRouteCost;
+                
+                document.getElementById('comparisonContent').innerHTML = `
+                    <div class="comparison-row">
+                        <span class="model-name">Комиссионная модель</span>
+                        <span class="model-cost">$${data.commissionRevenue.toFixed(2)} (${data.commissionRouteCost.toFixed(2)}%)</span>
+                    </div>
+                    <div class="comparison-row">
+                        <span class="model-name">Подписочная модель</span>
+                        <span class="model-cost">$${data.subscriptionRevenue.toFixed(2)} (${data.subscriptionRouteCost.toFixed(2)}%)</span>
+                    </div>
+                    <div class="savings">
+                        ${revenueDifference > 0 ? 
+                            `💰 Комиссия выгоднее на: $${revenueDifference.toFixed(2)} (+${routeCostDifference.toFixed(2)}%)` :
+                            `📈 Подписка выгоднее на: $${Math.abs(revenueDifference).toFixed(2)} (-${Math.abs(routeCostDifference).toFixed(2)}%)`
+                        }
+                    </div>
+                `;
+            } else {
+                document.getElementById('comparisonContent').innerHTML = `
+                    <div class="comparison-row">
+                        <span class="model-name">Комиссионная модель</span>
+                        <span class="model-cost">$${data.commissionRevenue.toFixed(2)} (${data.commissionRouteCost.toFixed(2)}%)</span>
+                    </div>
+                    <div class="comparison-row">
+                        <span class="model-name">Подписочная модель</span>
+                        <span class="model-cost" style="color: #dc2626;">Недоступна</span>
+                    </div>
+                    <div class="alert alert-info" style="margin-top: 16px;">
+                        ℹ️ Доступна только комиссионная модель
+                    </div>
+                `;
+            }
         }
 
         // Расчет при изменении чекбокса
