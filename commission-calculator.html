@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор выручки - Комиссионная модель</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .form-group {
+            margin-bottom: 24px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+            font-size: 14px;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            background: white;
+            box-sizing: border-box;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+        }
+        .btn-calculate {
+            width: 100%;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 24px;
+        }
+        .btn-calculate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(14, 165, 233, 0.3);
+        }
+        .btn-calculate:active {
+            transform: translateY(0);
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #0ea5e9;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .results-card {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 2px solid #0ea5e9;
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 20px;
+        }
+        .results-card h3 {
+            margin: 0 0 16px 0;
+            color: #0c4a6e;
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .cost-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #bae6fd;
+        }
+        .cost-item:last-child {
+            border-bottom: none;
+            font-weight: 700;
+            font-size: 16px;
+            color: #0c4a6e;
+            margin-top: 8px;
+            padding-top: 16px;
+            border-top: 2px solid #0ea5e9;
+        }
+        .cost-label {
+            color: #164e63;
+        }
+        .cost-value {
+            font-weight: 600;
+            color: #0c4a6e;
+        }
+        .route-cost-card {
+            background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+            border: 2px solid #8b5cf6;
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 20px;
+        }
+        .route-cost-card h3 {
+            margin: 0 0 16px 0;
+            color: #5b21b6;
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+        .formula-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #374151;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💳 Калькулятор выручки - Комиссионная модель</h1>
+            <p>Расчет доходов от комиссии за задачи, обмена валют и комиссии за вывод</p>
+        </div>
+        
+        <div class="content">
+            <h2 style="margin-top: 0; color: #374151;">Параметры для расчета</h2>
+            
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="performers">Количество исполнителей</label>
+                    <input type="number" id="performers" class="form-control" placeholder="Например: 10" min="1">
+                </div>
+
+                <div class="form-group">
+                    <label for="avgPayout">Средняя выплата ($)</label>
+                    <input type="number" id="avgPayout" class="form-control" placeholder="Например: 1000" min="0" step="100">
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="taskCommission">Комиссия за задачу (%)</label>
+                    <input type="number" id="taskCommission" class="form-control" placeholder="Например: 2.5" min="0" max="100" step="0.1">
+                </div>
+
+                <div class="form-group">
+                    <label for="exchangeRate">Обмен валют (%)</label>
+                    <input type="number" id="exchangeRate" class="form-control" placeholder="Например: 0.8" min="0" max="100" step="0.1">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="withdrawalFee">Комиссия за вывод (%)</label>
+                <input type="number" id="withdrawalFee" class="form-control" placeholder="Например: 2.5" min="0" max="100" step="0.1">
+            </div>
+
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="companyPaysWithdrawal">
+                    <label for="companyPaysWithdrawal">Компания платит комиссию за вывод</label>
+                </div>
+            </div>
+
+            <button class="btn-calculate" onclick="calculateCommissionRevenue()">
+                🧮 Рассчитать выручку от комиссии
+            </button>
+
+            <div class="formula-card">
+                <strong>Формула расчета:</strong><br>
+                Доход от комиссии = исполнители × средняя выплата × (комиссия за задачу / 100)<br>
+                Доход от обмена = общие выплаты × (обмен валют / 100)<br>
+                Доход от вывода = общие выплаты × (комиссия за вывод / 100) (если компания платит)<br>
+                <strong>Общий доход = доход от комиссии + доход от обмена + доход от вывода</strong>
+            </div>
+
+            <div id="results" style="display: none;">
+                <div id="revenueResults" class="results-card">
+                    <h3>💰 Наша выручка - Комиссионная модель</h3>
+                    <div id="revenueCosts"></div>
+                </div>
+
+                <div id="routeCostResults" class="route-cost-card">
+                    <h3>📊 Стоимость маршрута для компании</h3>
+                    <div id="routeCosts"></div>
+                </div>
+            </div>
+
+            <div id="placeholder" class="alert alert-info">
+                👆 Заполните параметры выше и нажмите "Рассчитать"
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function calculateCommissionRevenue() {
+            // Получаем значения из формы
+            const performers = parseInt(document.getElementById('performers').value) || 0;
+            const avgPayout = parseFloat(document.getElementById('avgPayout').value) || 0;
+            const taskCommission = parseFloat(document.getElementById('taskCommission').value) || 0;
+            const exchangeRate = parseFloat(document.getElementById('exchangeRate').value) || 0;
+            const withdrawalFee = parseFloat(document.getElementById('withdrawalFee').value) || 0;
+            const companyPaysWithdrawal = document.getElementById('companyPaysWithdrawal').checked;
+            
+            // Проверяем обязательные поля
+            if (performers === 0 || avgPayout === 0 || taskCommission === 0) {
+                document.getElementById('results').style.display = 'none';
+                document.getElementById('placeholder').style.display = 'block';
+                document.getElementById('placeholder').innerHTML = '⚠️ Заполните все обязательные поля: количество исполнителей, среднюю выплату и комиссию за задачу';
+                return;
+            }
+
+            // Расчет комиссионной модели
+            const totalPayout = performers * avgPayout; // Общие выплаты исполнителям
+            
+            // Доход от комиссии за задачи
+            const taskCommissionIncome = performers * avgPayout * (taskCommission / 100);
+            
+            // Доход от обмена валют
+            const exchangeIncome = totalPayout * (exchangeRate / 100);
+            
+            // Доход от оплаты вывода (если компания платит)
+            const withdrawalIncome = companyPaysWithdrawal ? totalPayout * (withdrawalFee / 100) : 0;
+            
+            // Общий доход от комиссионной модели
+            const totalRevenue = taskCommissionIncome + exchangeIncome + withdrawalIncome;
+
+            // Стоимость маршрута в процентах
+            const routeCost = (totalRevenue / totalPayout) * 100;
+
+            // Отображение результатов
+            displayCommissionResults({
+                performers,
+                avgPayout,
+                taskCommission,
+                exchangeRate,
+                withdrawalFee,
+                companyPaysWithdrawal,
+                totalPayout,
+                taskCommissionIncome,
+                exchangeIncome,
+                withdrawalIncome,
+                totalRevenue,
+                routeCost
+            });
+        }
+
+        function displayCommissionResults(data) {
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('placeholder').style.display = 'none';
+
+            // Доходы от комиссионной модели
+            document.getElementById('revenueCosts').innerHTML = `
+                <div class="cost-item">
+                    <span class="cost-label">Доход от комиссии за задачи (${data.taskCommission}%)</span>
+                    <span class="cost-value">$${data.taskCommissionIncome.toFixed(2)}</span>
+                </div>
+                ${data.exchangeRate > 0 ? `
+                <div class="cost-item">
+                    <span class="cost-label">Доход от обмена валют (${data.exchangeRate}%)</span>
+                    <span class="cost-value">$${data.exchangeIncome.toFixed(2)}</span>
+                </div>` : ''}
+                ${data.companyPaysWithdrawal ? `
+                <div class="cost-item">
+                    <span class="cost-label">Доход от оплаты вывода (${data.withdrawalFee}%)</span>
+                    <span class="cost-value">$${data.withdrawalIncome.toFixed(2)}</span>
+                </div>` : ''}
+                <div class="cost-item">
+                    <span class="cost-label">ИТОГО наша выручка</span>
+                    <span class="cost-value">$${data.totalRevenue.toFixed(2)}</span>
+                </div>
+            `;
+
+            // Стоимость маршрута
+            document.getElementById('routeCosts').innerHTML = `
+                <div class="cost-item">
+                    <span class="cost-label">Общие выплаты исполнителям</span>
+                    <span class="cost-value">$${data.totalPayout.toFixed(2)}</span>
+                </div>
+                <div class="cost-item">
+                    <span class="cost-label">Наша выручка</span>
+                    <span class="cost-value">$${data.totalRevenue.toFixed(2)}</span>
+                </div>
+                <div class="cost-item">
+                    <span class="cost-label">Стоимость маршрута для компании</span>
+                    <span class="cost-value">${data.routeCost.toFixed(2)}%</span>
+                </div>
+            `;
+        }
+
+        // Расчет при изменении чекбокса
+        document.getElementById('companyPaysWithdrawal').addEventListener('change', function() {
+            if (document.getElementById('results').style.display !== 'none') {
+                calculateCommissionRevenue();
+            }
+        });
+
+        // Автоматический пересчет при изменении полей
+        ['performers', 'avgPayout', 'taskCommission', 'exchangeRate', 'withdrawalFee'].forEach(id => {
+            document.getElementById(id).addEventListener('input', function() {
+                if (document.getElementById('results').style.display !== 'none') {
+                    calculateCommissionRevenue();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
