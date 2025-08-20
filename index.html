@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Анализ потерь по тарифным моделям</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 20px;
+            background: #f8fafc;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #1e293b;
+            margin-bottom: 10px;
+        }
+        .header p {
+            color: #64748b;
+            font-size: 16px;
+        }
+        .heatmap-container {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+        }
+        .heatmap {
+            flex: 1;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .heatmap-row {
+            display: flex;
+        }
+        .heatmap-cell {
+            width: 80px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        .heatmap-cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .row-label {
+            width: 120px;
+            background: #475569;
+            color: white;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .col-header {
+            height: 40px;
+            background: #334155;
+            color: white;
+            font-weight: bold;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .corner-cell {
+            width: 120px;
+            height: 40px;
+            background: #1e293b;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 10px;
+        }
+        .legend {
+            width: 300px;
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .legend h3 {
+            margin-top: 0;
+            color: #1e293b;
+            margin-bottom: 15px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 6px;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            margin-right: 10px;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        .legend-text {
+            font-size: 13px;
+            color: #374151;
+        }
+        .stats {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e2e8f0;
+        }
+        .stats h4 {
+            color: #1e293b;
+            margin-bottom: 10px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 13px;
+        }
+        .tooltip {
+            position: absolute;
+            background: #1e293b;
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .insights {
+            margin-top: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border-radius: 8px;
+            border-left: 4px solid #f59e0b;
+        }
+        .insights h3 {
+            color: #92400e;
+            margin-top: 0;
+        }
+        .insights ul {
+            color: #78350f;
+        }
+        .insights li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Анализ потерь по тарифным моделям</h1>
+            <p>Разница в выручке: подписка ($20/исполнитель) vs комиссия (2.5% от выплаты)</p>
+        </div>
+        
+        <div class="heatmap-container">
+            <div class="heatmap" id="heatmap"></div>
+            
+            <div class="legend">
+                <h3>Легенда потерь</h3>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #10b981;"></div>
+                    <div class="legend-text"><strong>Зеленая зона:</strong> Потери &lt; $50 - идеальные клиенты</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f59e0b;"></div>
+                    <div class="legend-text"><strong>Желтая зона:</strong> Потери $50-200 - приемлемо</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f97316;"></div>
+                    <div class="legend-text"><strong>Оранжевая зона:</strong> Потери $200-500 - требует анализа</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #dc2626;"></div>
+                    <div class="legend-text"><strong>Красная зона:</strong> Потери $500-1000 - высокий риск</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #7c2d12;"></div>
+                    <div class="legend-text"><strong>Критическая зона:</strong> Потери $1000-2000 - избегать</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #4c1d95;"></div>
+                    <div class="legend-text"><strong>🎯 Стратегическая зона:</strong> Потери &gt; $2000 - но иначе потеряем клиента!</div>
+                </div>
+                
+                <div class="stats">
+                    <h4>Статистика по зонам</h4>
+                    <div class="stats-grid" id="stats"></div>
+                </div>
+                
+                <div class="insights">
+                    <h3>💡 Ключевые инсайты для B2B стратегии</h3>
+                    <ul>
+                        <li><strong>Зеленая зона:</strong> Безрисковые клиенты - агрессивно продвигаем подписку</li>
+                        <li><strong>Желтая зона:</strong> Умеренные потери - стандартное предложение подписки</li>
+                        <li><strong>Оранжевая зона:</strong> Требует анализа LTV клиента и переговоров</li>
+                        <li><strong>Красная зона:</strong> Высокие потери - только при гарантиях долгосрочности</li>
+                        <li><strong>🎯 Стратегическая зона:</strong> Потери >$2000, но БЕЗ подписки клиент уйдет к конкурентам!</li>
+                        <li><strong>Правило B2B:</strong> Лучше маржа 10%, чем потерять клиента с оборотом $50k+/мес</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tooltip" id="tooltip"></div>
+    </div>
+
+    <script>
+        // Данные из CSV
+        const performersRange = Array.from({length: 50}, (_, i) => i + 1);
+        const avgPayouts = [1000, 2000, 3000, 4000, 5000, 6000];
+        
+        function calculateDiff(performers, avgPayout) {
+            return 20 * performers - avgPayout * 0.025 * performers;
+        }
+        
+        function getColor(diff) {
+            if (diff >= -50) return '#10b981';      // Зеленый - безопасная зона
+            if (diff >= -200) return '#f59e0b';     // Желтый - умеренные потери
+            if (diff >= -500) return '#f97316';     // Оранжевый - значительные потери
+            if (diff >= -1000) return '#dc2626';    // Красный - большие потери
+            if (diff >= -2000) return '#7c2d12';    // Темно-красный - критические потери
+            return '#4c1d95';                       // Фиолетовый - стратегические клиенты
+        }
+        
+        function getZone(diff) {
+            if (diff >= -50) return 'green';
+            if (diff >= -200) return 'yellow';
+            if (diff >= -500) return 'orange';
+            if (diff >= -1000) return 'red';
+            if (diff >= -2000) return 'critical';
+            return 'strategic';
+        }
+        
+        // Создание тепловой карты
+        function createHeatmap() {
+            const heatmap = document.getElementById('heatmap');
+            
+            // Заголовок
+            const headerRow = document.createElement('div');
+            headerRow.className = 'heatmap-row';
+            
+            const cornerCell = document.createElement('div');
+            cornerCell.className = 'corner-cell';
+            cornerCell.textContent = 'Исполнители / Выплаты';
+            headerRow.appendChild(cornerCell);
+            
+            avgPayouts.forEach(payout => {
+                const cell = document.createElement('div');
+                cell.className = 'col-header';
+                cell.textContent = `$${payout}`;
+                headerRow.appendChild(cell);
+            });
+            heatmap.appendChild(headerRow);
+            
+            // Строки данных
+            performersRange.forEach(performers => {
+                const row = document.createElement('div');
+                row.className = 'heatmap-row';
+                
+                const labelCell = document.createElement('div');
+                labelCell.className = 'row-label';
+                labelCell.textContent = `${performers} чел.`;
+                row.appendChild(labelCell);
+                
+                avgPayouts.forEach(avgPayout => {
+                    const diff = calculateDiff(performers, avgPayout);
+                    const cell = document.createElement('div');
+                    cell.className = 'heatmap-cell';
+                    cell.style.backgroundColor = getColor(diff);
+                    cell.textContent = `${Math.round(diff)}`;
+                    
+                    // Обработчики для тултипа
+                    cell.addEventListener('mouseenter', (e) => showTooltip(e, performers, avgPayout, diff));
+                    cell.addEventListener('mouseleave', hideTooltip);
+                    cell.addEventListener('mousemove', moveTooltip);
+                    
+                    row.appendChild(cell);
+                });
+                
+                heatmap.appendChild(row);
+            });
+        }
+        
+        // Тултип
+        function showTooltip(e, performers, avgPayout, diff) {
+            const tooltip = document.getElementById('tooltip');
+            const zone = getZone(diff);
+            const zoneNames = {
+                'green': 'Идеальная зона',
+                'yellow': 'Хорошая зона', 
+                'orange': 'Спорная зона',
+                'red': 'Рискованная зона',
+                'critical': 'Критическая зона',
+                'strategic': '🎯 Стратегическая зона'
+            };
+            
+            tooltip.innerHTML = `
+                <strong>${performers} исполнителей</strong><br>
+                Средняя выплата: $${avgPayout}<br>
+                Разница в выручке: <strong>$${Math.round(diff)}</strong><br>
+                Зона: <strong>${zoneNames[zone]}</strong><br>
+                <small>Подписка: $${performers * 20} | Комиссия: $${Math.round(avgPayout * 0.025 * performers)}</small>
+            `;
+            tooltip.style.opacity = '1';
+            moveTooltip(e);
+        }
+        
+        function hideTooltip() {
+            document.getElementById('tooltip').style.opacity = '0';
+        }
+        
+        function moveTooltip(e) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.style.left = e.pageX + 10 + 'px';
+            tooltip.style.top = e.pageY - 10 + 'px';
+        }
+        
+        // Статистика по зонам
+        function calculateStats() {
+            const zones = {
+                green: 0, yellow: 0, orange: 0, red: 0, critical: 0, strategic: 0
+            };
+            
+            performersRange.forEach(performers => {
+                avgPayouts.forEach(avgPayout => {
+                    const diff = calculateDiff(performers, avgPayout);
+                    const zone = getZone(diff);
+                    zones[zone]++;
+                });
+            });
+            
+            const statsDiv = document.getElementById('stats');
+            const total = Object.values(zones).reduce((a, b) => a + b, 0);
+            
+            Object.entries(zones).forEach(([zone, count]) => {
+                const percentage = ((count / total) * 100).toFixed(1);
+                const zoneNames = {
+                    'green': '🟢 Идеальная',
+                    'yellow': '🟡 Хорошая',
+                    'orange': '🟠 Спорная',
+                    'red': '🔴 Рискованная',
+                    'critical': '⚫ Критическая',
+                    'strategic': '🎯 Стратегическая'
+                };
+                
+                const statItem = document.createElement('div');
+                statItem.innerHTML = `<strong>${zoneNames[zone]}:</strong> ${count} (${percentage}%)`;
+                statsDiv.appendChild(statItem);
+            });
+        }
+        
+        // Инициализация
+        createHeatmap();
+        calculateStats();
+    </script>
+</body>
+</html>
