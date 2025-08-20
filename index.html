@@ -73,15 +73,15 @@
             justify-content: center;
         }
         .col-header {
+            width: 80px;
             height: 40px;
             background: #334155;
             color: white;
             font-weight: bold;
-            writing-mode: vertical-rl;
-            text-orientation: mixed;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 12px;
         }
         .corner-cell {
             width: 120px;
@@ -95,7 +95,7 @@
             font-size: 10px;
         }
         .legend {
-            width: 300px;
+            width: 320px;
             background: #f1f5f9;
             border-radius: 8px;
             padding: 20px;
@@ -206,7 +206,7 @@
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background: #4c1d95;"></div>
-                    <div class="legend-text"><strong>🎯 Стратегическая зона:</strong> Потери &gt; $2000 - но иначе потеряем клиента!</div>
+                    <div class="legend-text"><strong>🎯 Стратегическая зона:</strong> Оборот клиента ≥ $100k/мес - лучше снизить маржу, чем потерять!</div>
                 </div>
                 
                 <div class="stats">
@@ -221,8 +221,8 @@
                         <li><strong>Желтая зона:</strong> Умеренные потери - стандартное предложение подписки</li>
                         <li><strong>Оранжевая зона:</strong> Требует анализа LTV клиента и переговоров</li>
                         <li><strong>Красная зона:</strong> Высокие потери - только при гарантиях долгосрочности</li>
-                        <li><strong>🎯 Стратегическая зона:</strong> Потери >$2000, но БЕЗ подписки клиент уйдет к конкурентам!</li>
-                        <li><strong>Правило B2B:</strong> Лучше маржа 10%, чем потерять клиента с оборотом $50k+/мес</li>
+                        <li><strong>🎯 Стратегическая зона:</strong> Клиенты с оборотом $100k+/мес - БЕЗ подписки уйдут к конкурентам!</li>
+                        <li><strong>Правило B2B:</strong> Лучше маржа 10%, чем потерять крупного клиента</li>
                     </ul>
                 </div>
             </div>
@@ -240,22 +240,35 @@
             return 20 * performers - avgPayout * 0.025 * performers;
         }
         
-        function getColor(diff) {
+        function calculateMonthlyRevenue(performers, avgPayout) {
+            return performers * avgPayout;
+        }
+        
+        function getColor(diff, performers, avgPayout) {
+            const monthlyRevenue = calculateMonthlyRevenue(performers, avgPayout);
+            
+            // Стратегическая зона: оборот клиента ≥ $100k/мес
+            if (monthlyRevenue >= 100000) {
+                return '#4c1d95'; // Фиолетовый - стратегические клиенты
+            }
+            
+            // Остальные зоны по потерям
             if (diff >= -50) return '#10b981';      // Зеленый - безопасная зона
             if (diff >= -200) return '#f59e0b';     // Желтый - умеренные потери
             if (diff >= -500) return '#f97316';     // Оранжевый - значительные потери
             if (diff >= -1000) return '#dc2626';    // Красный - большие потери
-            if (diff >= -2000) return '#7c2d12';    // Темно-красный - критические потери
-            return '#4c1d95';                       // Фиолетовый - стратегические клиенты
+            return '#7c2d12';                       // Темно-красный - критические потери
         }
         
-        function getZone(diff) {
+        function getZone(diff, performers, avgPayout) {
+            const monthlyRevenue = calculateMonthlyRevenue(performers, avgPayout);
+            
+            if (monthlyRevenue >= 100000) return 'strategic';
             if (diff >= -50) return 'green';
             if (diff >= -200) return 'yellow';
             if (diff >= -500) return 'orange';
             if (diff >= -1000) return 'red';
-            if (diff >= -2000) return 'critical';
-            return 'strategic';
+            return 'critical';
         }
         
         // Создание тепловой карты
@@ -293,7 +306,7 @@
                     const diff = calculateDiff(performers, avgPayout);
                     const cell = document.createElement('div');
                     cell.className = 'heatmap-cell';
-                    cell.style.backgroundColor = getColor(diff);
+                    cell.style.backgroundColor = getColor(diff, performers, avgPayout);
                     cell.textContent = `${Math.round(diff)}`;
                     
                     // Обработчики для тултипа
@@ -311,7 +324,9 @@
         // Тултип
         function showTooltip(e, performers, avgPayout, diff) {
             const tooltip = document.getElementById('tooltip');
-            const zone = getZone(diff);
+            const zone = getZone(diff, performers, avgPayout);
+            const monthlyRevenue = calculateMonthlyRevenue(performers, avgPayout);
+            
             const zoneNames = {
                 'green': 'Идеальная зона',
                 'yellow': 'Хорошая зона', 
@@ -323,10 +338,11 @@
             
             tooltip.innerHTML = `
                 <strong>${performers} исполнителей</strong><br>
-                Средняя выплата: $${avgPayout}<br>
+                Средняя выплата: $${avgPayout.toLocaleString()}<br>
+                <strong>Оборот клиента: $${monthlyRevenue.toLocaleString()}/мес</strong><br>
                 Разница в выручке: <strong>$${Math.round(diff)}</strong><br>
                 Зона: <strong>${zoneNames[zone]}</strong><br>
-                <small>Подписка: $${performers * 20} | Комиссия: $${Math.round(avgPayout * 0.025 * performers)}</small>
+                <small>Подписка: $${(performers * 20).toLocaleString()} | Комиссия: $${Math.round(avgPayout * 0.025 * performers).toLocaleString()}</small>
             `;
             tooltip.style.opacity = '1';
             moveTooltip(e);
@@ -351,7 +367,7 @@
             performersRange.forEach(performers => {
                 avgPayouts.forEach(avgPayout => {
                     const diff = calculateDiff(performers, avgPayout);
-                    const zone = getZone(diff);
+                    const zone = getZone(diff, performers, avgPayout);
                     zones[zone]++;
                 });
             });
