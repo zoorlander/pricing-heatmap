@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Калькулятор стоимости для менеджеров продаж</title>
+    <title>Калькулятор стоимости маршрута</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -243,12 +243,25 @@
             font-size: 16px;
             font-weight: 700;
         }
+        .currency-section {
+    background: #f0f9ff;
+    border: 2px solid #0ea5e9;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+}
+.currency-section h3 {
+    margin: 0 0 16px 0;
+    color: #0c4a6e;
+    font-size: 16px;
+    font-weight: 700;
+}
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🧮 Калькулятор стоимости для менеджеров продаж</h1>
+            <h1>🧮 Калькулятор стоимости маршрута</h1>
             <p>Быстрый расчет итоговой стоимости под конкретного клиента</p>
         </div>
         
@@ -279,24 +292,44 @@
                         </div>
                     </div>
 
-                    <h3 style="margin-top: 20px;">💰 Валюта пополнения</h3>
-                    <div class="form-group">
-                        <select id="depositCurrency" class="form-control">
-                            <option value="">Выберите валюту пополнения...</option>
-                            <option value="USD">💵 USD</option>
-                            <option value="EUR">💶 EUR</option>
-                            <option value="USDT">₮ USDT</option>
-                            <option value="USDC">🪙 USDC</option>
-                            <option value="AMD">🇦🇲 AMD (Армянский драм)</option>
-                            <option value="KGS">🇰🇬 KGS (Киргизский сом)</option>
-                            <option value="AED">🇦🇪 AED (Дирхам ОАЭ)</option>
-                            <option value="GBP">🇬🇧 GBP (Фунт стерлингов)</option>
-                            <option value="HKD">🇭🇰 HKD (Гонконгский доллар)</option>
-                        </select>
-                        <div id="specialCurrencyWarning" class="alert alert-warning" style="display: none;">
-                            ℹ️ Доступно ручное (!) пополнение. За пополнение в нестандартных валютах взимается дополнительная комиссия.
-                        </div>
-                    </div>
+                    <!-- Новая секция для валют -->
+<div class="currency-section">
+    <h3>💰 Валютные настройки</h3>
+    
+    <div class="form-group">
+        <label for="depositCurrency">Валюта пополнения</label>
+        <select id="depositCurrency" class="form-control">
+            <option value="">Выберите валюту пополнения...</option>
+            <option value="USD">💵 USD</option>
+            <option value="EUR">💶 EUR</option>
+            <option value="USDT">₮ USDT</option>
+            <option value="USDC">🪙 USDC</option>
+            <option value="AMD">🇦🇲 AMD (Армянский драм)</option>
+            <option value="KGS">🇰🇬 KGS (Киргизский сом)</option>
+            <option value="AED">🇦🇪 AED (Дирхам ОАЭ)</option>
+            <option value="GBP">🇬🇧 GBP (Фунт стерлингов)</option>
+            <option value="HKD">🇭🇰 HKD (Гонконгский доллар)</option>
+        </select>
+        <div id="specialCurrencyWarning" class="alert alert-warning" style="display: none;">
+            ℹ️ Доступно ручное (!) пополнение. За пополнение в нестандартных валютах взимается дополнительная комиссия.
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="taskCurrency">Валюта задачи</label>
+        <select id="taskCurrency" class="form-control">
+            <option value="">Выберите валюту задачи...</option>
+            <option value="USD">💵 USD (подписка + комиссия)</option>
+            <option value="EUR">💶 EUR (подписка + комиссия)</option>
+            <option value="USDT">₮ USDT (только комиссия)</option>
+            <option value="RUB">🇷🇺 RUB (только комиссия)</option>
+            <option value="BYN">🇧🇾 BYN (только комиссия)</option>
+        </select>
+        <div id="taskCurrencyWarning" class="alert alert-warning" style="display: none;">
+            ⚠️ Для данной валюты доступна только комиссионная модель
+        </div>
+    </div>
+</div>
                 </div>
 
                 <h2 style="color: #374151;">Параметры для расчета</h2>
@@ -373,6 +406,8 @@
     <script>
         // Массив валют, для которых показывать предупреждение
         const specialCurrencies = ['AMD', 'KGS', 'AED', 'GBP', 'HKD'];
+        // Валюты задач, которые поддерживают только комиссионную модель
+        const commissionOnlyCurrencies = ['USDT', 'RUB', 'BYN'];
 
         // Обработчики для показа/скрытия предупреждений
         document.getElementById('hasRestrictedPerformers').addEventListener('change', function() {
@@ -400,13 +435,22 @@
             const warning = document.getElementById('specialCurrencyWarning');
             warning.style.display = specialCurrencies.includes(this.value) ? 'block' : 'none';
         });
-
+        // Обработчик для валюты задачи
+    document.getElementById('taskCurrency').addEventListener('change', function() {
+        const warning = document.getElementById('taskCurrencyWarning');
+        warning.style.display = commissionOnlyCurrencies.includes(this.value) ? 'block' : 'none';
+    
+            if (document.getElementById('results').style.display !== 'none') {
+                calculateRevenue();
+            }
+        });
         function isSubscriptionAvailable() {
             const hasRestrictedPerformers = document.getElementById('hasRestrictedPerformers').checked;
             const hasLegalEntityPerformers = document.getElementById('hasLegalEntityPerformers').checked;
-            
-            return !hasRestrictedPerformers && !hasLegalEntityPerformers;
-        }
+            const taskCurrency = document.getElementById('taskCurrency').value;
+    
+            return !hasRestrictedPerformers && !hasLegalEntityPerformers && !commissionOnlyCurrencies.includes(taskCurrency);
+            }
 
         function calculateRevenue() {
             // Получаем значения из формы
