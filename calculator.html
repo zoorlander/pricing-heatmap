@@ -287,10 +287,14 @@
                             <option value="EUR">💶 EUR</option>
                             <option value="USDT">₮ USDT</option>
                             <option value="USDC">🪙 USDC</option>
-                            <option value="OTHER">🌍 Другие</option>
+                            <option value="AMD">🇦🇲 AMD (Армянский драм)</option>
+                            <option value="KGS">🇰🇬 KGS (Киргизский сом)</option>
+                            <option value="AED">🇦🇪 AED (Дирхам ОАЭ)</option>
+                            <option value="GBP">🇬🇧 GBP (Фунт стерлингов)</option>
+                            <option value="HKD">🇭🇰 HKD (Гонконгский доллар)</option>
                         </select>
-                        <div id="otherCurrencyWarning" class="alert alert-warning" style="display: none;">
-                            ℹ️ Доступно ручное (!) пополнение в рублях, арабских дирхамах, казахстанских тенге. За пополнение в нестандартных валютах взимается дополнительная комиссия.
+                        <div id="specialCurrencyWarning" class="alert alert-warning" style="display: none;">
+                            ℹ️ Доступно ручное (!) пополнение. За пополнение в нестандартных валютах взимается дополнительная комиссия.
                         </div>
                     </div>
                 </div>
@@ -367,6 +371,9 @@
     </div>
 
     <script>
+        // Массив валют, для которых показывать предупреждение
+        const specialCurrencies = ['AMD', 'KGS', 'AED', 'GBP', 'HKD'];
+
         // Обработчики для показа/скрытия предупреждений
         document.getElementById('hasRestrictedPerformers').addEventListener('change', function() {
             const warning = document.getElementById('restrictedPerformersWarning');
@@ -390,8 +397,8 @@
 
         // Обработчик для валюты пополнения
         document.getElementById('depositCurrency').addEventListener('change', function() {
-            const warning = document.getElementById('otherCurrencyWarning');
-            warning.style.display = this.value === 'OTHER' ? 'block' : 'none';
+            const warning = document.getElementById('specialCurrencyWarning');
+            warning.style.display = specialCurrencies.includes(this.value) ? 'block' : 'none';
         });
 
         function isSubscriptionAvailable() {
