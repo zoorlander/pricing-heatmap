@@ -278,6 +278,21 @@
                             ⚠️ Подписка недоступна для исполнителей ЮЛ
                         </div>
                     </div>
+
+                    <h3 style="margin-top: 20px;">💰 Валюта пополнения</h3>
+                    <div class="form-group">
+                        <select id="depositCurrency" class="form-control">
+                            <option value="">Выберите валюту пополнения...</option>
+                            <option value="USD">💵 USD</option>
+                            <option value="EUR">💶 EUR</option>
+                            <option value="USDT">₮ USDT</option>
+                            <option value="USDC">🪙 USDC</option>
+                            <option value="OTHER">🌍 Другие</option>
+                        </select>
+                        <div id="otherCurrencyWarning" class="alert alert-warning" style="display: none;">
+                            ℹ️ Доступно ручное (!) пополнение в рублях, арабских дирхамах, казахстанских тенге. За пополнение в нестандартных валютах взимается дополнительная комиссия.
+                        </div>
+                    </div>
                 </div>
 
                 <h2 style="color: #374151;">Параметры для расчета</h2>
@@ -371,6 +386,12 @@
             if (document.getElementById('results').style.display !== 'none') {
                 calculateRevenue();
             }
+        });
+
+        // Обработчик для валюты пополнения
+        document.getElementById('depositCurrency').addEventListener('change', function() {
+            const warning = document.getElementById('otherCurrencyWarning');
+            warning.style.display = this.value === 'OTHER' ? 'block' : 'none';
         });
 
         function isSubscriptionAvailable() {
