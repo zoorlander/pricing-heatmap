@@ -166,6 +166,9 @@
                 <input type="checkbox" id="hasLegalEntityPerformers">
                 <label for="hasLegalEntityPerformers">Есть исполнители-юридические лица</label>
             </div>
+            <div id="legalEntityWarning" class="alert alert-danger" style="display: none;">
+                ⚠️ Для исполнителей ЮЛ недоступна подписочная модель. Необходимо предупредить об этом клиента
+            </div>
         </div>
 
         <div class="currency-section">
@@ -247,6 +250,11 @@
         // Обработчики для показа/скрытия предупреждений
         document.getElementById('hasRestrictedPerformers').addEventListener('change', function() {
             const warning = document.getElementById('restrictedPerformersWarning');
+            warning.style.display = this.checked ? 'block' : 'none';
+        });
+
+        document.getElementById('hasLegalEntityPerformers').addEventListener('change', function() {
+            const warning = document.getElementById('legalEntityWarning');
             warning.style.display = this.checked ? 'block' : 'none';
         });
 
