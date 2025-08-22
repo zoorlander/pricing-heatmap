@@ -131,6 +131,24 @@
             border: 1px solid #fca5a5;
             color: #dc2626;
         }
+        .alert-info {
+            background: #dbeafe;
+            border: 1px solid #93c5fd;
+            color: #1e40af;
+        }
+        .country-section {
+            background: #f0fdf4;
+            border: 2px solid #22c55e;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        .country-section h3 {
+            margin: 0 0 16px 0;
+            color: #14532d;
+            font-size: 16px;
+            font-weight: 700;
+        }
         .currency-section {
             background: #f0f9ff;
             border: 2px solid #0ea5e9;
@@ -151,6 +169,46 @@
         <div class="header">
             <h1>🧮 Калькулятор стоимости маршрута</h1>
             <p>Быстрый расчет итоговой стоимости под конкретного клиента</p>
+        </div>
+
+        <div class="country-section">
+            <h3>🌍 Страна регистрации компании</h3>
+            <div class="form-group">
+                <label for="companyCountry">Выберите страну регистрации</label>
+                <select id="companyCountry" class="form-control">
+                    <option value="">Выберите страну...</option>
+                    <option value="USA">🇺🇸 США</option>
+                    <option value="Georgia">🇬🇪 Грузия</option>
+                    <option value="UAE">🇦🇪 ОАЭ</option>
+                    <option value="Armenia">🇦🇲 Армения</option>
+                    <option value="Germany">🇩🇪 Германия</option>
+                    <option value="Other">🌐 Другие страны</option>
+                </select>
+                
+                <div id="countryWarningUSA" class="alert alert-warning" style="display: none;">
+                    ⚠️ При регистрации клиенты часто указывают EIN вместо номера государственной регистрации компании, из-за чего не проходит Basic-KYB проверка. Предупредите клиента о том, что необходимо указывать именно регистрационный номер.
+                </div>
+                
+                <div id="countryWarningGeorgia" class="alert alert-info" style="display: none;">
+                    ℹ️ Если клиент ИП, автоматическую Basic-KYB проверку пройти не получится. SumSub получает только названия ИП на грузинском языке и не может сопоставить его с названием бренда. Требуется обратиться к комплаенс-менеджеру.
+                </div>
+                
+                <div id="countryWarningUAE" class="alert alert-warning" style="display: none;">
+                    ⚠️ При регистрации клиенты часто указывают некорректный регистрационный номер, из-за чего не проходит Basic-KYB проверка. Предупредите клиента о том, что необходимо указывать именно номер лицензии компании (license number).
+                </div>
+                
+                <div id="countryWarningArmenia" class="alert alert-info" style="display: none;">
+                    ℹ️ Многие компании отсутствуют в базе SumSub, поэтому часть заказчиков перенаправляли на Green KYB.
+                </div>
+                
+                <div id="countryWarningGermany" class="alert alert-info" style="display: none;">
+                    ℹ️ Если клиент ИП, автоматическую Basic-KYB проверку пройти не получится. SumSub получает только названия ИП на немецком языке и не может сопоставить его с названием бренда. Требуется обратиться к комплаенс-менеджеру.
+                </div>
+                
+                <div id="countryWarningOther" class="alert alert-warning" style="display: none;">
+                    ⚠️ При регистрации клиенты часто указывают неполное юридическое название или путают бренд (brand name) и официальное название компании (company name). Предупредите клиента о том, что официальное название компании должно совпадать с указанными в документах.
+                </div>
+            </div>
         </div>
 
         <div class="form-section">
@@ -246,6 +304,25 @@
     <script>
         // Массив валют, для которых показывать предупреждение
         const specialCurrencies = ['AMD', 'KGS', 'AED', 'GBP', 'HKD'];
+
+        // Обработчик для выбора страны
+        document.getElementById('companyCountry').addEventListener('change', function() {
+            // Скрыть все предупреждения
+            ['USA', 'Georgia', 'UAE', 'Armenia', 'Germany', 'Other'].forEach(country => {
+                const warning = document.getElementById('countryWarning' + country);
+                if (warning) {
+                    warning.style.display = 'none';
+                }
+            });
+
+            // Показать соответствующее предупреждение
+            if (this.value) {
+                const warning = document.getElementById('countryWarning' + this.value);
+                if (warning) {
+                    warning.style.display = 'block';
+                }
+            }
+        });
 
         // Обработчики для показа/скрытия предупреждений
         document.getElementById('hasRestrictedPerformers').addEventListener('change', function() {
