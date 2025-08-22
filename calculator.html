@@ -149,6 +149,19 @@
             font-size: 16px;
             font-weight: 700;
         }
+        .basic-params-section {
+            background: #fef7ff;
+            border: 2px solid #a855f7;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        .basic-params-section h3 {
+            margin: 0 0 16px 0;
+            color: #7c2d12;
+            font-size: 16px;
+            font-weight: 700;
+        }
         .currency-section {
             background: #f0f9ff;
             border: 2px solid #0ea5e9;
@@ -211,6 +224,18 @@
             </div>
         </div>
 
+        <div class="basic-params-section">
+            <h3>📊 Основные параметры проекта</h3>
+            <div class="form-group">
+                <label for="performersCount">Количество исполнителей</label>
+                <input type="number" id="performersCount" class="form-control" placeholder="Например, 10" min="1">
+            </div>
+            <div class="form-group">
+                <label for="avgTaskValue">Средняя стоимость задачи</label>
+                <input type="number" id="avgTaskValue" class="form-control" placeholder="Например, 1000" min="0">
+            </div>
+        </div>
+
         <div class="form-section">
             <h3>👥 Состав исполнителей</h3>
             <div class="checkbox-group">
@@ -264,7 +289,7 @@
 
         <div id="exchangeSection" style="display: none; margin-bottom: 24px;"></div>
 
-        <h2 style="color: #374151;">Параметры для расчета</h2>
+        <h2 style="color: #374151;">Параметры комиссий</h2>
         <div class="form-group">
             <label for="taskCommission">Комиссия за задачу (%)</label>
             <input type="number" id="taskCommission" class="form-control" placeholder="Например, 2.5" min="0" step="0.1">
@@ -276,14 +301,6 @@
         <div class="form-group">
             <label for="withdrawalFee">Комиссия за вывод (%)</label>
             <input type="number" id="withdrawalFee" class="form-control" placeholder="Например, 2.5" min="0" step="0.1">
-        </div>
-        <div class="form-group">
-            <label for="performersCount">Количество исполнителей</label>
-            <input type="number" id="performersCount" class="form-control" placeholder="Например, 10" min="1">
-        </div>
-        <div class="form-group">
-            <label for="avgTaskValue">Средняя стоимость задачи</label>
-            <input type="number" id="avgTaskValue" class="form-control" placeholder="Например, 1000" min="0">
         </div>
 
         <button class="btn" onclick="calculateRevenue()">Рассчитать</button>
