@@ -126,6 +126,11 @@
             border: 1px solid #fcd34d;
             color: #92400e;
         }
+        .alert-danger {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #dc2626;
+        }
         .currency-section {
             background: #f0f9ff;
             border: 2px solid #0ea5e9;
@@ -153,6 +158,9 @@
             <div class="checkbox-group">
                 <input type="checkbox" id="hasRestrictedPerformers">
                 <label for="hasRestrictedPerformers">Есть исполнители из РФ/РБ/Украины</label>
+            </div>
+            <div id="restrictedPerformersWarning" class="alert alert-danger" style="display: none;">
+                ⚠️ Для исполнителей из РФ/РБ/Украины недоступна подписочная модель. Необходимо предупредить об этом клиента
             </div>
             <div class="checkbox-group">
                 <input type="checkbox" id="hasLegalEntityPerformers">
@@ -237,6 +245,11 @@
         const specialCurrencies = ['AMD', 'KGS', 'AED', 'GBP', 'HKD'];
 
         // Обработчики для показа/скрытия предупреждений
+        document.getElementById('hasRestrictedPerformers').addEventListener('change', function() {
+            const warning = document.getElementById('restrictedPerformersWarning');
+            warning.style.display = this.checked ? 'block' : 'none';
+        });
+
         document.getElementById('depositCurrency').addEventListener('change', function() {
             const warning = document.getElementById('specialCurrencyWarning');
             warning.style.display = specialCurrencies.includes(this.value) ? 'block' : 'none';
