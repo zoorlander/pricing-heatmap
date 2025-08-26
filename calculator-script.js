@@ -1,6 +1,399 @@
 const { jsPDF } = window.jspdf;
 const specialCurrencies = ['AMD', 'KGS', 'AED', 'GBP', 'HKD'];
 
+// Exchange rates and fees (simplified for demo)
+const exchangeRates = {
+    'USD_EUR': { rate: 0.85, fee: 2.213 },
+    'USD_RUB': { rate: 93, fee: 4.95 },
+    'RUB_EUR': { rate: 0.0092, fee: 3.5 },
+    'EUR_RUB': { rate: 108, fee: 3.5 }
+};
+
+const withdrawalFees = {
+    'EUR': 2.5,
+    'USD': 2.5,
+    'RUB': 1.5
+};
+
+function switchTab(tab) {
+    const calculatorTab = document.getElementById('calculatorTab');
+    const tracingTab = document.getElementById('tracingTab');
+    const tabs = document.querySelectorAll('.tab');
+    
+    tabs.forEach(t => t.classList.remove('active'));
+    
+    if (tab === 'calculator') {
+        calculatorTab.style.display = 'block';
+        tracingTab.style.display = 'none';
+        document.querySelector('[onclick="switchTab(\'calculator\')"]').classList.add('active');
+    } else {
+        calculatorTab.style.display = 'none';
+        tracingTab.style.display = 'block';
+        document.querySelector('[onclick="switchTab(\'tracing\')"]').classList.add('active');
+    }
+}
+
+function selectScenario(scenarioNumber) {
+    // Remove active class from all scenario buttons
+    document.querySelectorAll('.scenario-btn').forEach(btn => btn.classList.remove('active'));
+    
+    // Add active class to selected button
+    event.target.classList.add('active');
+    
+    const amount = parseFloat(document.getElementById('traceAmount').value) || 1000;
+    const descriptionDiv = document.getElementById('scenarioDescription');
+    const flowDiv = document.getElementById('paymentFlow');
+    
+    descriptionDiv.style.display = 'block';
+    flowDiv.style.display = 'block';
+    
+    let scenario;
+    switch(scenarioNumber) {
+        case 1:
+            scenario = scenario1(amount);
+            descriptionDiv.innerHTML = `
+                <strong>Сценарий 1:</strong> Пополнение в USD, оплата исполнителю в USD, 
+                исполнитель обменивает на EUR и выводит в EUR на свой счет.
+            `;
+            break;
+        case 2:
+            scenario = scenario2(amount);
+            descriptionDiv.innerHTML = `
+                <strong>Сценарий 2:</strong> Пополнение в USD, оплата исполнителю в USD, 
+                исполнитель обменивает на RUB, затем RUB на EUR и выводит на карту в EUR.
+            `;
+            break;
+        case 3:
+            scenario = scenario3(amount);
+            descriptionDiv.innerHTML = `
+                <strong>Сценарий 3:</strong> Пополнение в USD, оплата исполнителю в USD, 
+                исполнитель обменивает на RUB и выводит на карту в RUB.
+            `;
+            break;
+        case 4:
+            scenario = scenario4(amount);
+            descriptionDiv.innerHTML = `
+                <strong>Сценарий 4:</strong> Пополнение в USD, обмен на RUB, 
+                оплата исполнителю в RUB на карту.
+            `;
+            break;
+    }
+    
+    renderPaymentFlow(scenario);
+}
+
+function scenario1(amount) {
+    // Scenario 1: USD deposit → USD payment → EUR exchange → EUR withdrawal
+    const steps = [];
+    let currentAmount = amount;
+    
+    steps.push({
+        step: 1,
+        description: "Пополнение счета",
+        amount: currentAmount,
+        currency: "USD",
+        fee: 0,
+        type: "deposit"
+    });
+    
+    const taskFee = currentAmount * 0.025;
+    currentAmount -= taskFee;
+    steps.push({
+        step: 2,
+        description: "Комиссия за задачу (2.5%)",
+        amount: currentAmount,
+        currency: "USD",
+        fee: taskFee,
+        type: "fee"
+    });
+    
+    steps.push({
+        step: 3,
+        description: "Платеж исполнителю",
+        amount: currentAmount,
+        currency: "USD",
+        fee: 0,
+        type: "payment"
+    });
+    
+    const exchangeFee = currentAmount * (exchangeRates.USD_EUR.fee / 100);
+    const afterExchangeFee = currentAmount - exchangeFee;
+    const eurAmount = afterExchangeFee * exchangeRates.USD_EUR.rate;
+    steps.push({
+        step: 4,
+        description: `Обмен USD → EUR (курс ${exchangeRates.USD_EUR.rate}, комиссия ${exchangeRates.USD_EUR.fee}%)`,
+        amount: eurAmount,
+        currency: "EUR",
+        fee: exchangeFee,
+        feeUSD: exchangeFee,
+        type: "exchange"
+    });
+    
+    const withdrawalFee = eurAmount * (withdrawalFees.EUR / 100);
+    const finalAmount = eurAmount - withdrawalFee;
+    steps.push({
+        step: 5,
+        description: `Вывод на счет в EUR (комиссия ${withdrawalFees.EUR}%)`,
+        amount: finalAmount,
+        currency: "EUR",
+        fee: withdrawalFee,
+        feeUSD: withdrawalFee / exchangeRates.USD_EUR.rate,
+        type: "withdrawal"
+    });
+    
+    return {
+        steps: steps,
+        initialAmount: amount,
+        finalAmount: finalAmount,
+        finalCurrency: "EUR",
+        finalAmountUSD: finalAmount / exchangeRates.USD_EUR.rate
+    };
+}
+
+function scenario2(amount) {
+    // Scenario 2: USD deposit → USD payment → RUB exchange → EUR exchange → EUR withdrawal
+    const steps = [];
+    let currentAmount = amount;
+    
+    steps.push({
+        step: 1,
+        description: "Пополнение счета",
+        amount: currentAmount,
+        currency: "USD",
+        fee: 0,
+        type: "deposit"
+    });
+    
+    const taskFee = currentAmount * 0.025;
+    currentAmount -= taskFee;
+    steps.push({
+        step: 2,
+        description: "Комиссия за задачу (2.5%)",
+        amount: currentAmount,
+        currency: "USD",
+        fee: taskFee,
+        type: "fee"
+    });
+    
+    steps.push({
+        step: 3,
+        description: "Платеж исполнителю",
+        amount: currentAmount,
+        currency: "USD",
+        fee: 0,
+        type: "payment"
+    });
+    
+    // USD → RUB
+    const usdRubFee = currentAmount * (exchangeRates.USD_RUB.fee / 100);
+    const afterUsdRubFee = currentAmount - usdRubFee;
+    const rubAmount = afterUsdRubFee * exchangeRates.USD_RUB.rate;
+    steps.push({
+        step: 4,
+        description: `Обмен USD → RUB (курс ${exchangeRates.USD_RUB.rate}, комиссия ${exchangeRates.USD_RUB.fee}%)`,
+        amount: rubAmount,
+        currency: "RUB",
+        fee: usdRubFee,
+        feeUSD: usdRubFee,
+        type: "exchange"
+    });
+    
+    // RUB → EUR
+    const rubEurFee = rubAmount * (exchangeRates.RUB_EUR.fee / 100);
+    const afterRubEurFee = rubAmount - rubEurFee;
+    const eurAmount = afterRubEurFee * exchangeRates.RUB_EUR.rate;
+    steps.push({
+        step: 5,
+        description: `Обмен RUB → EUR (курс ${exchangeRates.RUB_EUR.rate}, комиссия ${exchangeRates.RUB_EUR.fee}%)`,
+        amount: eurAmount,
+        currency: "EUR",
+        fee: rubEurFee,
+        feeUSD: (rubEurFee / exchangeRates.USD_RUB.rate),
+        type: "exchange"
+    });
+    
+    const withdrawalFee = eurAmount * (withdrawalFees.EUR / 100);
+    const finalAmount = eurAmount - withdrawalFee;
+    steps.push({
+        step: 6,
+        description: `Вывод на карту в EUR (комиссия ${withdrawalFees.EUR}%)`,
+        amount: finalAmount,
+        currency: "EUR",
+        fee: withdrawalFee,
+        feeUSD: withdrawalFee / exchangeRates.USD_EUR.rate,
+        type: "withdrawal"
+    });
+    
+    return {
+        steps: steps,
+        initialAmount: amount,
+        finalAmount: finalAmount,
+        finalCurrency: "EUR",
+        finalAmountUSD: finalAmount / exchangeRates.USD_EUR.rate
+    };
+}
+
+function scenario3(amount) {
+    // Scenario 3: USD deposit → USD payment → RUB exchange → RUB withdrawal
+    const steps = [];
+    let currentAmount = amount;
+    
+    steps.push({
+        step: 1,
+        description: "Пополнение счета",
+        amount: currentAmount,
+        currency: "USD",
+        fee: 0,
+        type: "deposit"
+    });
+    
+    const taskFee = currentAmount * 0.025;
+    currentAmount -= taskFee;
+    steps.push({
+        step: 2,
+        description: "Комиссия за задачу (2.5%)",
+        amount: currentAmount,
+        currency: "USD",
+        fee: taskFee,
+        type: "fee"
+    });
+    
+    steps.push({
+        step: 3,
+        description: "Платеж исполнителю",
+        amount: currentAmount,
+        currency: "USD",
+        fee: 0,
+        type: "payment"
+    });
+    
+    const exchangeFee = currentAmount * (exchangeRates.USD_RUB.fee / 100);
+    const afterExchangeFee = currentAmount - exchangeFee;
+    const rubAmount = afterExchangeFee * exchangeRates.USD_RUB.rate;
+    steps.push({
+        step: 4,
+        description: `Обмен USD → RUB (курс ${exchangeRates.USD_RUB.rate}, комиссия ${exchangeRates.USD_RUB.fee}%)`,
+        amount: rubAmount,
+        currency: "RUB",
+        fee: exchangeFee,
+        feeUSD: exchangeFee,
+        type: "exchange"
+    });
+    
+    const withdrawalFee = rubAmount * (withdrawalFees.RUB / 100);
+    const finalAmount = rubAmount - withdrawalFee;
+    steps.push({
+        step: 5,
+        description: `Вывод на карту в RUB (комиссия ${withdrawalFees.RUB}%)`,
+        amount: finalAmount,
+        currency: "RUB",
+        fee: withdrawalFee,
+        feeUSD: withdrawalFee / exchangeRates.USD_RUB.rate,
+        type: "withdrawal"
+    });
+    
+    return {
+        steps: steps,
+        initialAmount: amount,
+        finalAmount: finalAmount,
+        finalCurrency: "RUB",
+        finalAmountUSD: finalAmount / exchangeRates.USD_RUB.rate
+    };
+}
+
+function scenario4(amount) {
+    // Scenario 4: USD deposit → RUB exchange → RUB payment
+    const steps = [];
+    let currentAmount = amount;
+    
+    steps.push({
+        step: 1,
+        description: "Пополнение счета",
+        amount: currentAmount,
+        currency: "USD",
+        fee: 0,
+        type: "deposit"
+    });
+    
+    const taskFee = currentAmount * 0.025;
+    currentAmount -= taskFee;
+    steps.push({
+        step: 2,
+        description: "Комиссия за задачу (2.5%)",
+        amount: currentAmount,
+        currency: "USD",
+        fee: taskFee,
+        type: "fee"
+    });
+    
+    const exchangeFee = currentAmount * (exchangeRates.USD_RUB.fee / 100);
+    const afterExchangeFee = currentAmount - exchangeFee;
+    const rubAmount = afterExchangeFee * exchangeRates.USD_RUB.rate;
+    steps.push({
+        step: 3,
+        description: `Обмен USD → RUB (курс ${exchangeRates.USD_RUB.rate}, комиссия ${exchangeRates.USD_RUB.fee}%)`,
+        amount: rubAmount,
+        currency: "RUB",
+        fee: exchangeFee,
+        feeUSD: exchangeFee,
+        type: "exchange"
+    });
+    
+    steps.push({
+        step: 4,
+        description: "Прямая оплата исполнителю на карту в RUB",
+        amount: rubAmount,
+        currency: "RUB",
+        fee: 0,
+        type: "payment"
+    });
+    
+    return {
+        steps: steps,
+        initialAmount: amount,
+        finalAmount: rubAmount,
+        finalCurrency: "RUB",
+        finalAmountUSD: rubAmount / exchangeRates.USD_RUB.rate
+    };
+}
+
+function renderPaymentFlow(scenario) {
+    const flowDiv = document.getElementById('paymentFlow');
+    let html = '';
+    
+    scenario.steps.forEach(step => {
+        const isLoss = step.fee > 0;
+        html += `
+            <div class="flow-step">
+                <div class="step-number">${step.step}</div>
+                <div class="step-content">
+                    <div style="font-weight: 500;">${step.description}</div>
+                    <div style="margin-top: 4px;">
+                        <span class="step-amount">${step.amount.toFixed(2)} ${step.currency}</span>
+                        ${isLoss ? `<span class="step-loss"> (комиссия: -${step.fee.toFixed(2)} ${step.currency}${step.feeUSD ? ` / -$${step.feeUSD.toFixed(2)}` : ''})</span>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `
+        <div class="final-amount">
+            <h4>🎯 Итоговая сумма получателя</h4>
+            <div class="amount">${scenario.finalAmount.toFixed(2)} ${scenario.finalCurrency}</div>
+            <div style="margin-top: 8px; color: #6b7280;">
+                Эквивалент в USD: $${scenario.finalAmountUSD.toFixed(2)}
+            </div>
+            <div style="margin-top: 8px; color: #dc2626; font-weight: 600;">
+                Общие потери: $${(scenario.initialAmount - scenario.finalAmountUSD).toFixed(2)} 
+                (${(((scenario.initialAmount - scenario.finalAmountUSD) / scenario.initialAmount) * 100).toFixed(2)}%)
+            </div>
+        </div>
+    `;
+    
+    flowDiv.innerHTML = html;
+}
+
 function exportToPDF() {
     const doc = new jsPDF();
     doc.setFont('helvetica');
