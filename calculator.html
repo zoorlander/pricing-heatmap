@@ -199,6 +199,116 @@
             font-size: 16px;
             font-weight: 700;
         }
+        .tracing-section {
+            background: #fef2f2;
+            border: 2px solid #f87171;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        .tracing-section h3 {
+            margin: 0 0 16px 0;
+            color: #991b1b;
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .scenario-btn {
+            background: #f87171;
+            color: #fff;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            margin: 4px;
+            transition: background 0.2s;
+        }
+        .scenario-btn:hover {
+            background: #ef4444;
+        }
+        .scenario-btn.active {
+            background: #dc2626;
+        }
+        .payment-flow {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            display: none;
+        }
+        .flow-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 8px;
+            background: #f9fafb;
+            border-radius: 6px;
+        }
+        .flow-step:last-child {
+            margin-bottom: 0;
+        }
+        .step-number {
+            background: #3b82f6;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        .step-content {
+            flex: 1;
+        }
+        .step-amount {
+            font-weight: 600;
+            color: #059669;
+        }
+        .step-loss {
+            font-weight: 600;
+            color: #dc2626;
+        }
+        .final-amount {
+            background: #dcfce7;
+            border: 2px solid #22c55e;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            text-align: center;
+        }
+        .final-amount h4 {
+            margin: 0 0 8px 0;
+            color: #14532d;
+        }
+        .final-amount .amount {
+            font-size: 20px;
+            font-weight: 700;
+            color: #059669;
+        }
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .tab {
+            padding: 8px 16px;
+            background: #f3f4f6;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            background: #3b82f6;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -208,151 +318,180 @@
             <p>Быстрый расчет итоговой стоимости под конкретного клиента</p>
         </div>
 
-        <div class="country-section">
-            <h3>🌍 Страна регистрации компании</h3>
-            <div class="form-group">
-                <label for="companyCountry">Выберите страну регистрации</label>
-                <select id="companyCountry" class="form-control">
-                    <option value="">Выберите страну...</option>
-                    <option value="USA">🇺🇸 США</option>
-                    <option value="Georgia">🇬🇪 Грузия</option>
-                    <option value="UAE">🇦🇪 ОАЭ</option>
-                    <option value="Armenia">🇦🇲 Армения</option>
-                    <option value="Germany">🇩🇪 Германия</option>
-                    <option value="Other">🌐 Другие страны</option>
-                </select>
-                
-                <div id="countryWarningUSA" class="alert alert-warning" style="display: none;">
-                    ⚠️ При регистрации клиенты часто указывают EIN вместо номера государственной регистрации компании, из-за чего не проходит Basic-KYB проверка. Предупредите клиента о том, что необходимо указывать именно регистрационный номер.
-                </div>
-                
-                <div id="countryWarningGeorgia" class="alert alert-info" style="display: none;">
-                    ℹ️ Если клиент ИП, автоматическую Basic-KYB проверку пройти не получится. SumSub получает только названия ИП на грузинском языке и не может сопоставить его с названием бренда. Требуется обратиться к комплаенс-менеджеру.
-                </div>
-                
-                <div id="countryWarningUAE" class="alert alert-warning" style="display: none;">
-                    ⚠️ При регистрации клиенты часто указывают некорректный регистрационный номер, из-за чего не проходит Basic-KYB проверка. Предупредите клиента о том, что необходимо указывать именно номер лицензии компании (license number).
-                </div>
-                
-                <div id="countryWarningArmenia" class="alert alert-info" style="display: none;">
-                    ℹ️ Многие компании отсутствуют в базе SumSub, поэтому часть заказчиков перенаправляли на Green KYB.
-                </div>
-                
-                <div id="countryWarningGermany" class="alert alert-info" style="display: none;">
-                    ℹ️ Если клиент ИП, автоматическую Basic-KYB проверку пройти не получится. SumSub получает только названия ИП на немецком языке и не может сопоставить его с названием бренда. Требуется обратиться к комплаенс-менеджеру.
-                </div>
-                
-                <div id="countryWarningOther" class="alert alert-warning" style="display: none;">
-                    ⚠️ При регистрации клиенты часто указывают неполное юридическое название или путают бренд (brand name) и официальное название компании (company name). Предупредите клиента о том, что официальное название компании должно совпадать с указанными в документах.
-                </div>
-            </div>
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('calculator')">📊 Калькулятор</button>
+            <button class="tab" onclick="switchTab('tracing')">🔍 Трассировка платежей</button>
         </div>
 
-        <div class="basic-params-section">
-            <h3>📊 Основные параметры проекта</h3>
-            <div class="form-group">
-                <label for="performersCount">Количество исполнителей</label>
-                <input type="number" id="performersCount" class="form-control" placeholder="Например, 10" min="1">
+        <div id="calculatorTab">
+            <div class="country-section">
+                <h3>🌍 Страна регистрации компании</h3>
+                <div class="form-group">
+                    <label for="companyCountry">Выберите страну регистрации</label>
+                    <select id="companyCountry" class="form-control">
+                        <option value="">Выберите страну...</option>
+                        <option value="USA">🇺🇸 США</option>
+                        <option value="Georgia">🇬🇪 Грузия</option>
+                        <option value="UAE">🇦🇪 ОАЭ</option>
+                        <option value="Armenia">🇦🇲 Армения</option>
+                        <option value="Germany">🇩🇪 Германия</option>
+                        <option value="Other">🌐 Другие страны</option>
+                    </select>
+                    
+                    <div id="countryWarningUSA" class="alert alert-warning" style="display: none;">
+                        ⚠️ При регистрации клиенты часто указывают EIN вместо номера государственной регистрации компании, из-за чего не проходит Basic-KYB проверка. Предупредите клиента о том, что необходимо указывать именно регистрационный номер.
+                    </div>
+                    
+                    <div id="countryWarningGeorgia" class="alert alert-info" style="display: none;">
+                        ℹ️ Если клиент ИП, автоматическую Basic-KYB проверку пройти не получится. SumSub получает только названия ИП на грузинском языке и не может сопоставить его с названием бренда. Требуется обратиться к комплаенс-менеджеру.
+                    </div>
+                    
+                    <div id="countryWarningUAE" class="alert alert-warning" style="display: none;">
+                        ⚠️ При регистрации клиенты часто указывают некорректный регистрационный номер, из-за чего не проходит Basic-KYB проверка. Предупредите клиента о том, что необходимо указывать именно номер лицензии компании (license number).
+                    </div>
+                    
+                    <div id="countryWarningArmenia" class="alert alert-info" style="display: none;">
+                        ℹ️ Многие компании отсутствуют в базе SumSub, поэтому часть заказчиков перенаправляли на Green KYB.
+                    </div>
+                    
+                    <div id="countryWarningGermany" class="alert alert-info" style="display: none;">
+                        ℹ️ Если клиент ИП, автоматическую Basic-KYB проверку пройти не получится. SumSub получает только названия ИП на немецком языке и не может сопоставить его с названием бренда. Требуется обратиться к комплаенс-менеджеру.
+                    </div>
+                    
+                    <div id="countryWarningOther" class="alert alert-warning" style="display: none;">
+                        ⚠️ При регистрации клиенты часто указывают неполное юридическое название или путают бренд (brand name) и официальное название компании (company name). Предупредите клиента о том, что официальное название компании должно совпадать с указанными в документах.
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="avgTaskValue">Средняя стоимость задачи</label>
-                <input type="number" id="avgTaskValue" class="form-control" placeholder="Например, 1000" min="0">
-            </div>
-        </div>
 
-        <div class="form-section">
-            <h3>👥 Состав исполнителей</h3>
-            <div class="checkbox-group">
-                <input type="checkbox" id="hasRestrictedPerformers">
-                <label for="hasRestrictedPerformers">Есть исполнители из РФ/РБ/Украины</label>
+            <div class="basic-params-section">
+                <h3>📊 Основные параметры проекта</h3>
+                <div class="form-group">
+                    <label for="performersCount">Количество исполнителей</label>
+                    <input type="number" id="performersCount" class="form-control" placeholder="Например, 10" min="1">
+                </div>
+                <div class="form-group">
+                    <label for="avgTaskValue">Средняя стоимость задачи</label>
+                    <input type="number" id="avgTaskValue" class="form-control" placeholder="Например, 1000" min="0">
+                </div>
             </div>
-            <div id="restrictedPerformersWarning" class="alert alert-danger" style="display: none;">
-                ⚠️ Для исполнителей из РФ/РБ/Украины недоступна подписочная модель. Необходимо предупредить об этом клиента
-            </div>
-            <div class="checkbox-group">
-                <input type="checkbox" id="hasLegalEntityPerformers">
-                <label for="hasLegalEntityPerformers">Есть исполнители-юридические лица</label>
-            </div>
-            <div id="legalEntityWarning" class="alert alert-danger" style="display: none;">
-                ⚠️ Для исполнителей ЮЛ недоступна подписочная модель. Необходимо предупредить об этом клиента
-            </div>
-        </div>
 
-        <div class="currency-section">
-            <h3>💰 Валютные настройки</h3>
-            <div class="form-group">
-                <label for="depositCurrency">Валюта пополнения</label>
-                <select id="depositCurrency" class="form-control">
-                    <option value="">Выберите валюту пополнения...</option>
-                    <option value="USD">💵 USD</option>
-                    <option value="EUR">💶 EUR</option>
-                    <option value="USDT">₮ USDT</option>
-                    <option value="USDC">🪙 USDC</option>
-                    <option value="AMD">🇦🇲 AMD (Армянский драм)</option>
-                    <option value="KGS">🇰🇬 KGS (Киргизский сом)</option>
-                    <option value="AED">🇦🇪 AED (Дирхам ОАЭ)</option>
-                    <option value="GBP">🇬🇧 GBP (Фунт стерлингов)</option>
-                    <option value="HKD">🇭🇰 HKD (Гонконгский доллар)</option>
-                </select>
-                <div id="specialCurrencyWarning" class="alert alert-warning" style="display: none;">
-                    ℹ️ Доступно ручное (!) пополнение. За пополнение в нестандартных валютах взимается дополнительная комиссия.
+            <div class="form-section">
+                <h3>👥 Состав исполнителей</h3>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="hasRestrictedPerformers">
+                    <label for="hasRestrictedPerformers">Есть исполнители из РФ/РБ/Украины</label>
+                </div>
+                <div id="restrictedPerformersWarning" class="alert alert-danger" style="display: none;">
+                    ⚠️ Для исполнителей из РФ/РБ/Украины недоступна подписочная модель. Необходимо предупредить об этом клиента
                 </div>
                 <div class="checkbox-group">
-                    <input type="checkbox" id="cardTopup">
-                    <label for="cardTopup">Пополнение через карту</label>
+                    <input type="checkbox" id="hasLegalEntityPerformers">
+                    <label for="hasLegalEntityPerformers">Есть исполнители-юридические лица</label>
                 </div>
-                <div id="cardTopupWarning" class="alert alert-info" style="display: none;">
-                    💳 Пополнение через карту доступно только для USD/EUR. Взимается дополнительная комиссия
+                <div id="legalEntityWarning" class="alert alert-danger" style="display: none;">
+                    ⚠️ Для исполнителей ЮЛ недоступна подписочная модель. Необходимо предупредить об этом клиента
                 </div>
+            </div>
+
+            <div class="currency-section">
+                <h3>💰 Валютные настройки</h3>
+                <div class="form-group">
+                    <label for="depositCurrency">Валюта пополнения</label>
+                    <select id="depositCurrency" class="form-control">
+                        <option value="">Выберите валюту пополнения...</option>
+                        <option value="USD">💵 USD</option>
+                        <option value="EUR">💶 EUR</option>
+                        <option value="USDT">₮ USDT</option>
+                        <option value="USDC">🪙 USDC</option>
+                        <option value="AMD">🇦🇲 AMD (Армянский драм)</option>
+                        <option value="KGS">🇰🇬 KGS (Киргизский сом)</option>
+                        <option value="AED">🇦🇪 AED (Дирхам ОАЭ)</option>
+                        <option value="GBP">🇬🇧 GBP (Фунт стерлингов)</option>
+                        <option value="HKD">🇭🇰 HKD (Гонконгский доллар)</option>
+                    </select>
+                    <div id="specialCurrencyWarning" class="alert alert-warning" style="display: none;">
+                        ℹ️ Доступно ручное (!) пополнение. За пополнение в нестандартных валютах взимается дополнительная комиссия.
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="cardTopup">
+                        <label for="cardTopup">Пополнение через карту</label>
+                    </div>
+                    <div id="cardTopupWarning" class="alert alert-info" style="display: none;">
+                        💳 Пополнение через карту доступно только для USD/EUR. Взимается дополнительная комиссия
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="taskCurrency">Валюта задачи</label>
+                    <select id="taskCurrency" class="form-control">
+                        <option value="">Выберите валюту задачи...</option>
+                        <option value="USD">💵 USD</option>
+                        <option value="EUR">💶 EUR</option>
+                        <option value="USDT">₮ USDT</option>
+                        <option value="RUB">🇷🇺 RUB</option>
+                        <option value="BYN">🇧🇾 BYN</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="exchangeSection" style="display: none; margin-bottom: 24px;"></div>
+
+            <h2 style="color: #374151;">Параметры комиссий</h2>
+            <div class="form-group">
+                <label for="taskCommission">Комиссия за задачу (%)</label>
+                <input type="number" id="taskCommission" class="form-control" placeholder="Например, 2.5" min="0" step="0.1">
+            </div>
+            <div class="form-group" id="exchangeFeeGroup">
+                <label for="exchangeFee">Комиссия за обмен валют (%)</label>
+                <input type="number" id="exchangeFee" class="form-control" placeholder="Например, 0.8" min="0" step="0.1">
             </div>
             <div class="form-group">
-                <label for="taskCurrency">Валюта задачи</label>
-                <select id="taskCurrency" class="form-control">
-                    <option value="">Выберите валюту задачи...</option>
-                    <option value="USD">💵 USD</option>
-                    <option value="EUR">💶 EUR</option>
-                    <option value="USDT">₮ USDT</option>
-                    <option value="RUB">🇷🇺 RUB</option>
-                    <option value="BYN">🇧🇾 BYN</option>
-                </select>
+                <label for="withdrawalFee">Комиссия за вывод на карты USD/EUR (%)</label>
+                <input type="number" id="withdrawalFee" class="form-control" placeholder="Например, 2.5" min="0" step="0.1">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="clientPaysWithdrawal">
+                    <label for="clientPaysWithdrawal">Оплачивается заказчиком</label>
+                </div>
+            </div>
+
+            <button class="btn" onclick="calculateRevenue()">Рассчитать</button>
+
+            <div class="results" id="results">
+                <h3>📊 Результаты <button class="btn-pdf" onclick="exportToPDF()">📄 Скачать PDF</button></h3>
+                <div class="result-card">
+                    <h4 style="color: #92400e; margin: 0 0 12px 0;">Комиссионная модель</h4>
+                    <p id="commissionRevenue">Доход от комиссии: $0</p>
+                    <p id="commissionExchange">Доход от обмена валют: $0</p>
+                    <p id="commissionWithdrawal">Доход от вывода: $0</p>
+                    <p id="commissionTotal">Общая выручка: $0</p>
+                    
+                    <h5>📈 Детализация стоимости маршрута:</h5>
+                    <p id="totalRouteCost">Общая стоимость маршрута: 0%</p>
+                    <p id="clientRouteCost">Стоимость маршрута для заказчика: 0%</p>
+                    <p id="performerRouteCost">Стоимость маршрута для исполнителя: 0%</p>
+                </div>
             </div>
         </div>
 
-        <div id="exchangeSection" style="display: none; margin-bottom: 24px;"></div>
-
-        <h2 style="color: #374151;">Параметры комиссий</h2>
-        <div class="form-group">
-            <label for="taskCommission">Комиссия за задачу (%)</label>
-            <input type="number" id="taskCommission" class="form-control" placeholder="Например, 2.5" min="0" step="0.1">
-        </div>
-        <div class="form-group" id="exchangeFeeGroup">
-            <label for="exchangeFee">Комиссия за обмен валют (%)</label>
-            <input type="number" id="exchangeFee" class="form-control" placeholder="Например, 0.8" min="0" step="0.1">
-        </div>
-        <div class="form-group">
-            <label for="withdrawalFee">Комиссия за вывод на карты USD/EUR (%)</label>
-            <input type="number" id="withdrawalFee" class="form-control" placeholder="Например, 2.5" min="0" step="0.1">
-            <div class="checkbox-group">
-                <input type="checkbox" id="clientPaysWithdrawal">
-                <label for="clientPaysWithdrawal">Оплачивается заказчиком</label>
-            </div>
-        </div>
-
-        <button class="btn" onclick="calculateRevenue()">Рассчитать</button>
-
-        <div class="results" id="results">
-            <h3>📊 Результаты <button class="btn-pdf" onclick="exportToPDF()">📄 Скачать PDF</button></h3>
-            <div class="result-card">
-                <h4 style="color: #92400e; margin: 0 0 12px 0;">Комиссионная модель</h4>
-                <p id="commissionRevenue">Доход от комиссии: $0</p>
-                <p id="commissionExchange">Доход от обмена валют: $0</p>
-                <p id="commissionWithdrawal">Доход от вывода: $0</p>
-                <p id="commissionTotal">Общая выручка: $0</p>
+        <div id="tracingTab" style="display: none;">
+            <div class="tracing-section">
+                <h3>🔍 Трассировка платежей</h3>
+                <p style="margin-bottom: 16px;">Выберите сценарий движения средств для детального анализа пути денег:</p>
                 
-                <h5>📈 Детализация стоимости маршрута:</h5>
-                <p id="totalRouteCost">Общая стоимость маршрута: 0%</p>
-                <p id="clientRouteCost">Стоимость маршрута для заказчика: 0%</p>
-                <p id="performerRouteCost">Стоимость маршрута для исполнителя: 0%</p>
+                <div class="form-group">
+                    <label for="traceAmount">Сумма пополнения (USD)</label>
+                    <input type="number" id="traceAmount" class="form-control" placeholder="1000" value="1000" min="1">
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                    <button class="scenario-btn" onclick="selectScenario(1)">Сценарий 1: USD → USD → EUR</button>
+                    <button class="scenario-btn" onclick="selectScenario(2)">Сценарий 2: USD → USD → RUB → EUR</button>
+                    <button class="scenario-btn" onclick="selectScenario(3)">Сценарий 3: USD → USD → RUB</button>
+                    <button class="scenario-btn" onclick="selectScenario(4)">Сценарий 4: USD → RUB</button>
+                </div>
+
+                <div id="scenarioDescription" class="alert alert-info" style="display: none;"></div>
+                <div id="paymentFlow" class="payment-flow"></div>
             </div>
         </div>
     </div>
