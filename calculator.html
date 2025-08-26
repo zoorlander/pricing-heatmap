@@ -90,6 +90,21 @@
         .btn:hover {
             background: #2563eb;
         }
+        .btn-pdf {
+            background: #dc2626;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-left: 10px;
+        }
+        .btn-pdf:hover {
+            background: #b91c1c;
+        }
         .results {
             display: none;
             margin-top: 32px;
@@ -98,6 +113,9 @@
             color: #1f2937;
             font-size: 18px;
             margin: 0 0 16px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
         .result-card {
             background: #f8fafc;
@@ -279,6 +297,13 @@
                 <div id="specialCurrencyWarning" class="alert alert-warning" style="display: none;">
                     ℹ️ Доступно ручное (!) пополнение. За пополнение в нестандартных валютах взимается дополнительная комиссия.
                 </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="cardTopup">
+                    <label for="cardTopup">Пополнение через карту</label>
+                </div>
+                <div id="cardTopupWarning" class="alert alert-info" style="display: none;">
+                    💳 Пополнение через карту доступно только для USD/EUR. Взимается дополнительная комиссия
+                </div>
             </div>
             <div class="form-group">
                 <label for="taskCurrency">Валюта задачи</label>
@@ -316,7 +341,7 @@
         <button class="btn" onclick="calculateRevenue()">Рассчитать</button>
 
         <div class="results" id="results">
-            <h3>📊 Результаты</h3>
+            <h3>📊 Результаты <button class="btn-pdf" onclick="exportToPDF()">📄 Скачать PDF</button></h3>
             <div class="result-card">
                 <h4 style="color: #92400e; margin: 0 0 12px 0;">Комиссионная модель</h4>
                 <p id="commissionRevenue">Доход от комиссии: $0</p>
@@ -332,286 +357,7 @@
         </div>
     </div>
 
-    <script>
-        // Массив валют, для которых показывать предупреждение
-        const specialCurrencies = ['AMD', 'KGS', 'AED', 'GBP', 'HKD'];
-
-        // Обработчик для выбора страны
-        document.getElementById('companyCountry').addEventListener('change', function() {
-            // Скрыть все предупреждения
-            ['USA', 'Georgia', 'UAE', 'Armenia', 'Germany', 'Other'].forEach(country => {
-                const warning = document.getElementById('countryWarning' + country);
-                if (warning) {
-                    warning.style.display = 'none';
-                }
-            });
-
-            // Показать соответствующее предупреждение
-            if (this.value) {
-                const warning = document.getElementById('countryWarning' + this.value);
-                if (warning) {
-                    warning.style.display = 'block';
-                }
-            }
-        });
-
-        // Обработчики для показа/скрытия предупреждений
-        document.getElementById('hasRestrictedPerformers').addEventListener('change', function() {
-            const warning = document.getElementById('restrictedPerformersWarning');
-            warning.style.display = this.checked ? 'block' : 'none';
-        });
-
-        document.getElementById('hasLegalEntityPerformers').addEventListener('change', function() {
-            const warning = document.getElementById('legalEntityWarning');
-            warning.style.display = this.checked ? 'block' : 'none';
-        });
-
-        document.getElementById('depositCurrency').addEventListener('change', function() {
-            const warning = document.getElementById('specialCurrencyWarning');
-            warning.style.display = specialCurrencies.includes(this.value) ? 'block' : 'none';
-            updateExchangeOptions();
-            if (document.getElementById('results').style.display !== 'none') {
-                calculateRevenue();
-            }
-        });
-
-        document.getElementById('taskCurrency').addEventListener('change', function() {
-            updateExchangeOptions();
-            if (document.getElementById('results').style.display !== 'none') {
-                calculateRevenue();
-            }
-        });
-
-        function updateExchangeOptions() {
-            const from = document.getElementById('depositCurrency').value;
-            const to = document.getElementById('taskCurrency').value;
-            const exchangeSection = document.getElementById('exchangeSection');
-            const exchangeFeeInput = document.getElementById('exchangeFee');
-            const exchangeFeeGroup = document.getElementById('exchangeFeeGroup');
-
-            if (!from || !to || from === to) {
-                exchangeSection.style.display = 'none';
-                exchangeFeeGroup.style.display = 'block';
-                exchangeFeeInput.readOnly = false;
-                exchangeFeeInput.value = 0;
-                return;
-            }
-
-            exchangeSection.style.display = 'block';
-            exchangeSection.innerHTML = '';
-            let isManual = true;
-
-            if (['USD', 'EUR'].includes(from) && to === 'RUB') {
-                isManual = false;
-                const h3 = document.createElement('h3');
-                h3.textContent = 'Источник курса обмена';
-                exchangeSection.appendChild(h3);
-
-                const select = document.createElement('select');
-                select.id = 'exchangeSource';
-                select.className = 'form-control';
-                const opt1 = document.createElement('option');
-                opt1.value = '4.95';
-                opt1.textContent = 'Стандартный курс банка ЦБ + комиссия 4.95%';
-                select.appendChild(opt1);
-                exchangeSection.appendChild(select);
-
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = 'showLgot';
-                const label = document.createElement('label');
-                label.htmlFor = 'showLgot';
-                label.textContent = 'Показать льготный вариант';
-                const divCheck = document.createElement('div');
-                divCheck.className = 'checkbox-group';
-                divCheck.appendChild(checkbox);
-                divCheck.appendChild(label);
-                exchangeSection.appendChild(divCheck);
-
-                const lgotWarning = document.createElement('div');
-                lgotWarning.className = 'alert alert-warning';
-                lgotWarning.style.display = 'none';
-                lgotWarning.textContent = 'Льготный курс доступен при обороте от 50 000$ в месяц';
-                exchangeSection.appendChild(lgotWarning);
-
-                checkbox.addEventListener('change', function() {
-                    if (this.checked) {
-                        const opt2 = document.createElement('option');
-                        opt2.value = '3';
-                        opt2.textContent = 'Льготный курс (Forex) + комиссия 3%';
-                        select.appendChild(opt2);
-                        lgotWarning.style.display = 'block';
-                    } else {
-                        if (select.options.length > 1) {
-                            select.remove(1);
-                        }
-                        lgotWarning.style.display = 'none';
-                    }
-                    setExchangeFee(select.value);
-                });
-
-                select.addEventListener('change', function() {
-                    setExchangeFee(this.value);
-                });
-
-                setExchangeFee('4.95');
-            } else if ((from === 'USD' && to === 'EUR') || (from === 'EUR' && to === 'USD')) {
-                isManual = false;
-                const h3 = document.createElement('h3');
-                h3.textContent = 'Комиссия за обмен';
-                exchangeSection.appendChild(h3);
-
-                const select = document.createElement('select');
-                select.id = 'exchangeSource';
-                select.className = 'form-control';
-                ['2.213', '2'].forEach(f => {
-                    const opt = document.createElement('option');
-                    opt.value = f;
-                    opt.textContent = `Стандартный курс Европейского ЦБ + ${f}%`;
-                    select.appendChild(opt);
-                });
-                exchangeSection.appendChild(select);
-
-                select.addEventListener('change', function() {
-                    setExchangeFee(this.value);
-                });
-
-                setExchangeFee('2.213');
-            } else if (from === 'USD' && to === 'USDT') {
-                isManual = false;
-                const h3 = document.createElement('h3');
-                h3.textContent = 'Комиссия за обмен (нет биржевого курса)';
-                exchangeSection.appendChild(h3);
-
-                const select = document.createElement('select');
-                select.id = 'exchangeSource';
-                select.className = 'form-control';
-                ['0', '2.2', '2', '1', '0.8'].forEach(f => {
-                    const opt = document.createElement('option');
-                    opt.value = f;
-                    opt.textContent = `${f}%`;
-                    select.appendChild(opt);
-                });
-                exchangeSection.appendChild(select);
-
-                select.addEventListener('change', function() {
-                    setExchangeFee(this.value);
-                });
-
-                setExchangeFee('0');
-            } else if (from === 'EUR' && to === 'USDT') {
-                isManual = false;
-                const h3 = document.createElement('h3');
-                h3.textContent = 'Комиссия за обмен через USD';
-                exchangeSection.appendChild(h3);
-
-                const select = document.createElement('select');
-                select.id = 'exchangeSource';
-                select.className = 'form-control';
-                ['4.413', '4.2', '4', '3.213', '3', '2.8'].forEach(f => {
-                    const opt = document.createElement('option');
-                    opt.value = f;
-                    opt.textContent = `${f}%`;
-                    select.appendChild(opt);
-                });
-                exchangeSection.appendChild(select);
-
-                select.addEventListener('change', function() {
-                    setExchangeFee(this.value);
-                });
-
-                setExchangeFee('4.413');
-            }
-
-            if (isManual) {
-                const h3 = document.createElement('h3');
-                h3.textContent = 'Ручной обмен валют';
-                exchangeSection.appendChild(h3);
-
-                const warning = document.createElement('div');
-                warning.className = 'alert alert-warning';
-                warning.textContent = 'Требуется ручной обмен. Комиссия устанавливается индивидуально.';
-                exchangeSection.appendChild(warning);
-
-                exchangeFeeGroup.style.display = 'block';
-                exchangeFeeInput.readOnly = false;
-            } else {
-                exchangeFeeGroup.style.display = 'none';
-                exchangeFeeInput.readOnly = true;
-            }
-        }
-
-        function setExchangeFee(value) {
-            document.getElementById('exchangeFee').value = value;
-            if (document.getElementById('results').style.display !== 'none') {
-                calculateRevenue();
-            }
-        }
-
-        function calculateRevenue() {
-            const performersCount = parseInt(document.getElementById('performersCount').value) || 0;
-            const avgTaskValue = parseFloat(document.getElementById('avgTaskValue').value) || 0;
-            const taskCommission = parseFloat(document.getElementById('taskCommission').value) || 0;
-            const exchangeFee = parseFloat(document.getElementById('exchangeFee').value) || 0;
-            const withdrawalFee = parseFloat(document.getElementById('withdrawalFee').value) || 0;
-            const clientPaysWithdrawal = document.getElementById('clientPaysWithdrawal').checked;
-
-            if (performersCount === 0 || avgTaskValue === 0) {
-                document.getElementById('results').style.display = 'none';
-                return;
-            }
-
-            const totalTaskValue = performersCount * avgTaskValue;
-
-            // Комиссионная модель
-            const commissionRevenue = totalTaskValue * (taskCommission / 100);
-            const commissionExchange = totalTaskValue * (exchangeFee / 100);
-            const commissionWithdrawal = totalTaskValue * (withdrawalFee / 100);
-            const commissionTotal = commissionRevenue + commissionExchange + commissionWithdrawal;
-
-            // Расчет стоимости маршрута
-            const totalRouteCost = (commissionTotal / totalTaskValue) * 100;
-            
-            let clientRouteCost, performerRouteCost;
-            
-            if (clientPaysWithdrawal) {
-                // Заказчик платит комиссию за вывод
-                clientRouteCost = totalRouteCost;
-                performerRouteCost = ((commissionRevenue + commissionExchange) / totalTaskValue) * 100;
-            } else {
-                // Исполнитель платит комиссию за вывод
-                clientRouteCost = ((commissionRevenue + commissionExchange) / totalTaskValue) * 100;
-                performerRouteCost = (commissionWithdrawal / totalTaskValue) * 100;
-            }
-
-            // Обновляем интерфейс
-            document.getElementById('commissionRevenue').textContent = `Доход от комиссии: $${commissionRevenue.toFixed(2)}`;
-            document.getElementById('commissionExchange').textContent = `Доход от обмена валют: $${commissionExchange.toFixed(2)}`;
-            document.getElementById('commissionWithdrawal').textContent = `Доход от вывода: $${commissionWithdrawal.toFixed(2)}`;
-            document.getElementById('commissionTotal').textContent = `Общая выручка: $${commissionTotal.toFixed(2)}`;
-            
-            document.getElementById('totalRouteCost').textContent = `Общая стоимость маршрута: ${totalRouteCost.toFixed(2)}%`;
-            document.getElementById('clientRouteCost').textContent = `Стоимость маршрута для заказчика: ${clientRouteCost.toFixed(2)}%`;
-            document.getElementById('performerRouteCost').textContent = `Стоимость маршрута для исполнителя: ${performerRouteCost.toFixed(2)}%`;
-
-            document.getElementById('results').style.display = 'block';
-        }
-
-        // Автоматический пересчет при изменении полей
-        ['performersCount', 'avgTaskValue', 'taskCommission', 'exchangeFee', 'withdrawalFee'].forEach(id => {
-            document.getElementById(id).addEventListener('input', function() {
-                if (document.getElementById('results').style.display !== 'none') {
-                    calculateRevenue();
-                }
-            });
-        });
-
-        // Автоматический пересчет при изменении чекбокса
-        document.getElementById('clientPaysWithdrawal').addEventListener('change', function() {
-            if (document.getElementById('results').style.display !== 'none') {
-                calculateRevenue();
-            }
-        });
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="calculator-script.js"></script>
 </body>
 </html>
